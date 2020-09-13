@@ -1,0 +1,56 @@
+From 54b6ba5f27dd9eb9ec2f1a41e7160964ab94451c Mon Sep 17 00:00:00 2001
+From: Michael Chang <mchang@suse.com>
+Date: Wed, 23 Nov 2016 16:52:16 +0800
+Subject: Build tpm as module
+
+Add --suse-enable-tpm option to grub2-install.
+
+Index: grub-2.04~rc1/util/grub-install.c
+===================================================================
+--- grub-2.04~rc1.orig/util/grub-install.c
++++ grub-2.04~rc1/util/grub-install.c
+@@ -80,6 +80,7 @@ static char *label_color;
+ static char *label_bgcolor;
+ static char *product_version;
+ static int add_rs_codes = 1;
++static int suse_enable_tpm = 0;
+ 
+ enum
+   {
+@@ -106,6 +107,7 @@ enum
+     OPTION_DISK_MODULE,
+     OPTION_NO_BOOTSECTOR,
+     OPTION_NO_RS_CODES,
++    OPTION_SUSE_ENABLE_TPM,
+     OPTION_MACPPC_DIRECTORY,
+     OPTION_ZIPL_DIRECTORY,
+     OPTION_LABEL_FONT,
+@@ -231,6 +233,10 @@ argp_parser (int key, char *arg, struct
+       add_rs_codes = 0;
+       return 0;
+ 
++    case OPTION_SUSE_ENABLE_TPM:
++      suse_enable_tpm = 1;
++      return 0;
++
+     case OPTION_DEBUG:
+       verbosity++;
+       return 0;
+@@ -292,6 +298,7 @@ static struct argp_option options[] = {
+   {"no-rs-codes", OPTION_NO_RS_CODES, 0, 0,
+    N_("Do not apply any reed-solomon codes when embedding core.img. "
+       "This option is only available on x86 BIOS targets."), 0},
++  {"suse-enable-tpm", OPTION_SUSE_ENABLE_TPM, 0, 0, N_("install TPM modules"), 0},
+ 
+   {"debug", OPTION_DEBUG, 0, OPTION_HIDDEN, 0, 2},
+   {"no-floppy", OPTION_NO_FLOPPY, 0, OPTION_HIDDEN, 0, 2},
+@@ -1320,6 +1327,9 @@ main (int argc, char *argv[])
+   else if (disk_module && disk_module[0])
+     grub_install_push_module (disk_module);
+ 
++  if (suse_enable_tpm && platform == GRUB_INSTALL_PLATFORM_X86_64_EFI)
++    grub_install_push_module ("tpm");
++
+   relative_grubdir = grub_make_system_path_relative_to_its_root (grubdir);
+   if (relative_grubdir[0] == '\0')
+     {

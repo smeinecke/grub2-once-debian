@@ -1,0 +1,72 @@
+From f6be3d41e24e685846dfc90ac1ca447501813687 Mon Sep 17 00:00:00 2001
+From: Alexander Graf <agraf@suse.de>
+Date: Tue, 26 Apr 2016 15:59:03 +0200
+Subject: [PATCH] SUSE: Add the "t" hotkey
+
+While graphical output is fancy and nice, in some environments (EFI) we can
+only have fancy graphical on frame buffer _or_ ugly serial on any output.
+
+To give the user a nicely graphical screen in the default case, but still
+allow them to get their boot menu on the serial console, let's add a new
+hidden option "t" that switches the output device back to the firmware default.
+
+Signed-off-by: Alexander Graf <agraf@suse.de>
+---
+
+v1 -> v2
+
+  - use hiddenentry instead of --hidden
+
+v2 -> v3 (by fvogt@suse.de)
+
+  - make it a runtime decision (bsc#1164385)
+
+Index: grub-2.04/Makefile.util.def
+===================================================================
+--- grub-2.04.orig/Makefile.util.def
++++ grub-2.04/Makefile.util.def
+@@ -525,6 +525,12 @@ script = {
+   installdir = grubconf;
+ };
+ 
++script = {
++  name = '95_textmode';
++  common = util/grub.d/95_textmode.in;
++  installdir = grubconf;
++};
++
+ program = {
+   mansection = 1;
+   name = grub-mkrescue;
+Index: grub-2.04/util/grub.d/00_header.in
+===================================================================
+--- grub-2.04.orig/util/grub.d/00_header.in
++++ grub-2.04/util/grub.d/00_header.in
+@@ -240,6 +240,10 @@ EOF
+ 	fi
+ 
+     cat << EOF
++  if [ "\${grub_platform}" = "efi" ]; then
++    echo "Please press 't' to show the boot menu on this console"
++  fi
++
+   set gfxmode=${GRUB_GFXMODE}
+   load_video
+   insmod gfxterm
+Index: grub-2.04/util/grub.d/95_textmode.in
+===================================================================
+--- /dev/null
++++ grub-2.04/util/grub.d/95_textmode.in
+@@ -0,0 +1,12 @@
++#!/bin/sh
++
++cat <<EOF
++if [ "\${grub_platform}" = "efi" ]; then
++  # On EFI systems we can only have graphics *or* serial, so allow the user
++  # to switch between the two
++  hiddenentry 'Text mode' --hotkey 't' {
++    set textmode=true
++    terminal_output console
++  }
++fi
++EOF
