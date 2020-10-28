@@ -12,15 +12,21 @@ This patch makes grub_install_copy_files() an adjecent call to
 grub_util_bios_setup() to minimize the risk of running into any error in
 between that would abort the process.
 
+V1:
+  * Create platform directory, /boot/grub2/i386-pc, which is required to
+    have existed in the process of setting up prefix for the core.img.
+    This fixed "failed to get canonical path of `/boot/grub2/i386-pc`"
+    error during grub-install.
+
 Signed-off-by: Michael Chang <mchang@suse.com>
 ---
  util/grub-install.c | 7 +++++--
  1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/util/grub-install.c b/util/grub-install.c
-index ac8f98552..bb3c81660 100644
---- a/util/grub-install.c
-+++ b/util/grub-install.c
+Index: grub-2.04/util/grub-install.c
+===================================================================
+--- grub-2.04.orig/util/grub-install.c
++++ grub-2.04/util/grub-install.c
 @@ -1340,8 +1340,9 @@ main (int argc, char *argv[])
  	}
      }
@@ -33,7 +39,15 @@ index ac8f98552..bb3c81660 100644
  
    char *envfile = grub_util_path_concat (2, grubdir, "grubenv");
    if (!grub_util_is_regular (envfile))
-@@ -1964,6 +1965,8 @@ main (int argc, char *argv[])
+@@ -1430,6 +1431,7 @@ main (int argc, char *argv[])
+   {
+     char *t = grub_util_path_concat (2, grubdir,
+ 				   platname);
++    grub_install_mkdir_p (t);
+     platdir = grub_canonicalize_file_name (t);
+     if (!platdir)
+       grub_util_error (_("failed to get canonical path of `%s'"),
+@@ -1964,6 +1966,8 @@ main (int argc, char *argv[])
  				  fs_probe, allow_floppy, add_rs_codes,
  				  warn_short_mbr_gap);
  	  }
@@ -42,6 +56,3 @@ index ac8f98552..bb3c81660 100644
  	break;
        }
      case GRUB_INSTALL_PLATFORM_SPARC64_IEEE1275:
--- 
-2.26.2
-

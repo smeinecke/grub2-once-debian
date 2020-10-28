@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        26.1
+Release:        27.8
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -1351,6 +1351,10 @@ fi
 %endif
 
 %changelog
+* Thu Oct 22 2020 Michael Chang <mchang@suse.com>
+- Fix grub2-install error with "failed to get canonical path of
+  `/boot/grub2/i386-pc'." (bsc#1177957)
+  * Modified 0002-grub-install-Avoid-incompleted-install-on-i386-pc.patch
 * Wed Oct 14 2020 Michael Chang <mchang@suse.com>
 - Fix https boot interrupted by unrecognised network address error message
   (bsc#1172952)
