@@ -3,7 +3,7 @@ on: push
 jobs:
   grub_update:
     env:
-      version: 2.04-27.8
+      version: 2.04-28.7
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
