@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit glibc-32bit
+BuildRequires:  glibc-devel-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        27.8
+Release:        28.7
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -1351,6 +1351,9 @@ fi
 %endif
 
 %changelog
+* Mon Nov  2 2020 Michael Chang <mchang@suse.com>
+- Fix boot failure in blocklist installation (bsc#1178278)
+  * Modified 0002-grub-install-Avoid-incompleted-install-on-i386-pc.patch
 * Thu Oct 22 2020 Michael Chang <mchang@suse.com>
 - Fix grub2-install error with "failed to get canonical path of
   `/boot/grub2/i386-pc'." (bsc#1177957)
