@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        30.5
+Release:        32.7
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -345,6 +345,7 @@ Patch734:       0005-Make-linux_arm_kernel_header.hdr_offset-be-at-the-ri.patch
 Patch735:       0006-efi-Set-image-base-address-before-jumping-to-the-PE-.patch
 Patch736:       0007-linuxefi-fail-kernel-validation-without-shim-protoco.patch
 Patch737:       0008-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
+Patch738:       0009-squash-Add-support-for-linuxefi.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -683,6 +684,7 @@ swap partition while in resuming
 %patch735 -p1
 %patch736 -p1
 %patch737 -p1
+%patch738 -p1
 
 %build
 # collect evidence to debug spurious build failure on SLE15
@@ -1347,7 +1349,7 @@ fi
 
 %changelog
 * Wed Jan 27 2021 Michael Chang <mchang@suse.com>
-- Secure Boot support in GRUB on aarch64 (jsc#SLE-15864)
+- Complete Secure Boot support on aarch64 (jsc#SLE-15020)
   * 0001-Add-support-for-Linux-EFI-stub-loading-on-aarch64.patch
   * 0002-arm64-make-sure-fdt-has-address-cells-and-size-cells.patch
   * 0003-Make-grub_error-more-verbose.patch
@@ -1356,6 +1358,7 @@ fi
   * 0006-efi-Set-image-base-address-before-jumping-to-the-PE-.patch
   * 0007-linuxefi-fail-kernel-validation-without-shim-protoco.patch
   * 0008-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
+  * 0009-squash-Add-support-for-linuxefi.patch
 * Thu Jan 21 2021 Michael Chang <mchang@suse.com>
 - Fix rpmlint 2.0 error for having arch specific path in noarch package aiming
   for compatibility with old package (bsc#1179044)

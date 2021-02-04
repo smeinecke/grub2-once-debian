@@ -1,7 +1,7 @@
 From 5f98e139f74a1280dee4f1579eeab05e08541e8c Mon Sep 17 00:00:00 2001
 From: Michael Chang <mchang@suse.com>
 Date: Tue, 10 Nov 2020 04:33:21 +0000
-Subject: [PATCH 8/8] squash! Add support for Linux EFI stub loading on
+Subject: [PATCH 8/9] squash! Add support for Linux EFI stub loading on
  aarch64.
 
 Make efi handoff the default loader for arm64 platform.

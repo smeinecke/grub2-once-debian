@@ -1,7 +1,7 @@
 From 669aa440ca34f6d8982c92b79fa2ee84c20618c6 Mon Sep 17 00:00:00 2001
 From: Peter Jones <pjones@redhat.com>
 Date: Thu, 16 Aug 2018 11:08:11 -0400
-Subject: [PATCH 5/8] Make linux_arm_kernel_header.hdr_offset be at the right
+Subject: [PATCH 5/9] Make linux_arm_kernel_header.hdr_offset be at the right
  place
 
 The kernel in front of me (slightly edited to make objdump work) looks like:

@@ -1,7 +1,7 @@
 From db4da8095b5ba722d22502c8d090e66816a5577d Mon Sep 17 00:00:00 2001
 From: Matthew Garrett <mjg@redhat.com>
 Date: Fri, 6 Nov 2020 08:36:36 +0000
-Subject: [PATCH 1/8] Add support for Linux EFI stub loading on aarch64.
+Subject: [PATCH 1/9] Add support for Linux EFI stub loading on aarch64.
 
 Add support for Linux EFI stub loading on aarch64.
 ---

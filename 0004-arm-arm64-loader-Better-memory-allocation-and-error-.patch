@@ -1,7 +1,7 @@
 From 5d417346956bc3108183020a8a9f20ddda034b48 Mon Sep 17 00:00:00 2001
 From: Peter Jones <pjones@redhat.com>
 Date: Thu, 11 Jul 2019 14:38:57 +0200
-Subject: [PATCH 4/8] arm/arm64 loader: Better memory allocation and error
+Subject: [PATCH 4/9] arm/arm64 loader: Better memory allocation and error
  messages.
 
 On mustang, our memory map looks like:

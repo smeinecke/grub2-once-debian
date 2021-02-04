@@ -1,7 +1,7 @@
 From 496890ebd2605eb1ff15f8d96c30b5d617f1bb85 Mon Sep 17 00:00:00 2001
 From: Michael Chang <mchang@suse.com>
 Date: Fri, 6 Nov 2020 11:19:06 +0000
-Subject: [PATCH 7/8] linuxefi: fail kernel validation without shim protocol.
+Subject: [PATCH 7/9] linuxefi: fail kernel validation without shim protocol.
 
 If certificates that signed grub are installed into db, grub can be
 booted directly. It will then boot any kernel without signature

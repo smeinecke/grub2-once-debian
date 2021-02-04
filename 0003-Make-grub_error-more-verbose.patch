@@ -1,7 +1,7 @@
 From 3526c4e467ee01a3cfd2f4d627433d078a1ab780 Mon Sep 17 00:00:00 2001
 From: Peter Jones <pjones@redhat.com>
 Date: Mon, 27 Aug 2018 13:14:06 -0400
-Subject: [PATCH 3/8] Make grub_error() more verbose
+Subject: [PATCH 3/9] Make grub_error() more verbose
 
 Signed-off-by: Peter Jones <pjones@redhat.com>
 ---
