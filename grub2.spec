@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit
+BuildRequires:  glibc-devel-32bit glibc-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        38.4
+Release:        39.6
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -390,6 +390,7 @@ Patch783:       0043-squash-Don-t-allow-insmod-when-secure-boot-is-enable.patch
 Patch784:       0044-squash-kern-Add-lockdown-support.patch
 Patch785:       0045-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
 Patch786:       0046-squash-verifiers-Move-verifiers-API-to-kernel-image.patch
+Patch787:       0001-kern-efi-sb-Add-chainloaded-image-as-shim-s-verifiab.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -769,6 +770,7 @@ swap partition while in resuming
 %patch784 -p1
 %patch785 -p1
 %patch786 -p1
+%patch787 -p1
 
 %build
 # collect evidence to debug spurious build failure on SLE15
@@ -1473,6 +1475,9 @@ fi
 %endif
 
 %changelog
+* Thu Mar 11 2021 Michael Chang <mchang@suse.com>
+- Fix chainloading windows on dual boot machine (bsc#1183073)
+  * 0001-kern-efi-sb-Add-chainloaded-image-as-shim-s-verifiab.patch
 * Fri Feb 26 2021 Michael Chang <mchang@suse.com>
 - VUL-0: grub2,shim: implement new SBAT method (bsc#1182057)
   * 0031-util-mkimage-Remove-unused-code-to-add-BSS-section.patch
