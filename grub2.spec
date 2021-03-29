@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit glibc-32bit
+BuildRequires:  glibc-devel-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        39.6
+Release:        40.23
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -391,6 +391,7 @@ Patch784:       0044-squash-kern-Add-lockdown-support.patch
 Patch785:       0045-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
 Patch786:       0046-squash-verifiers-Move-verifiers-API-to-kernel-image.patch
 Patch787:       0001-kern-efi-sb-Add-chainloaded-image-as-shim-s-verifiab.patch
+Patch788:       0001-ieee1275-Avoiding-many-unecessary-open-close.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -771,6 +772,7 @@ swap partition while in resuming
 %patch785 -p1
 %patch786 -p1
 %patch787 -p1
+%patch788 -p1
 
 %build
 # collect evidence to debug spurious build failure on SLE15
@@ -1475,6 +1477,10 @@ fi
 %endif
 
 %changelog
+* Tue Mar 16 2021 Michael Chang <mchang@suse.com>
+- Fix powerpc-ieee1275 lpar takes long time to boot with increasing number of
+  nvme namespace (bsc#1177751)
+  0001-ieee1275-Avoiding-many-unecessary-open-close.patch
 * Thu Mar 11 2021 Michael Chang <mchang@suse.com>
 - Fix chainloading windows on dual boot machine (bsc#1183073)
   * 0001-kern-efi-sb-Add-chainloaded-image-as-shim-s-verifiab.patch
