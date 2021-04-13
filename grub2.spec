@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        40.23
+Release:        41.3
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -392,6 +392,7 @@ Patch785:       0045-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
 Patch786:       0046-squash-verifiers-Move-verifiers-API-to-kernel-image.patch
 Patch787:       0001-kern-efi-sb-Add-chainloaded-image-as-shim-s-verifiab.patch
 Patch788:       0001-ieee1275-Avoiding-many-unecessary-open-close.patch
+Patch789:       0001-Workaround-volatile-efi-boot-variable.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -773,6 +774,7 @@ swap partition while in resuming
 %patch786 -p1
 %patch787 -p1
 %patch788 -p1
+%patch789 -p1
 
 %build
 # collect evidence to debug spurious build failure on SLE15
@@ -1477,6 +1479,9 @@ fi
 %endif
 
 %changelog
+* Thu Apr  8 2021 Michael Chang <mchang@suse.com>
+- Fix error grub_file_filters not found in Azure virtual machine (bsc#1182012)
+  * 0001-Workaround-volatile-efi-boot-variable.patch
 * Tue Mar 16 2021 Michael Chang <mchang@suse.com>
 - Fix powerpc-ieee1275 lpar takes long time to boot with increasing number of
   nvme namespace (bsc#1177751)
