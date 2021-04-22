@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit
+BuildRequires:  glibc-devel-32bit glibc-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        41.3
+Release:        42.3
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -1479,6 +1479,9 @@ fi
 %endif
 
 %changelog
+* Mon Apr 19 2021 Michael Chang <mchang@suse.com>
+- Fix build error on armv6/armv7 (bsc#1184712)
+  * 0001-emu-fix-executable-stack-marking.patch
 * Thu Apr  8 2021 Michael Chang <mchang@suse.com>
 - Fix error grub_file_filters not found in Azure virtual machine (bsc#1182012)
   * 0001-Workaround-volatile-efi-boot-variable.patch
