@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit glibc-32bit
+BuildRequires:  glibc-devel-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        43.14
+Release:        44.1
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -874,7 +874,7 @@ FS_MODULES="btrfs ext2 xfs jfs reiserfs"
 CD_MODULES=" all_video boot cat chain configfile echo true \
 		efinet font gfxmenu gfxterm gzio halt iso9660 \
 		jpeg minicmd normal part_apple part_msdos part_gpt \
-		password_pbkdf2 png reboot search search_fs_uuid \
+		password password_pbkdf2 png reboot search search_fs_uuid \
 		search_fs_file search_label sleep test video fat loadenv"
 PXE_MODULES="efinet tftp http"
 CRYPTO_MODULES="luks gcry_rijndael gcry_sha1 gcry_sha256"
@@ -1479,6 +1479,9 @@ fi
 %endif
 
 %changelog
+* Tue May 11 2021 Michael Chang <mchang@suse.com>
+- Fix plaintext password in grub config didn't work to unlock menu entry if
+  enabling secure boot in UEFI (bsc#1181892)
 * Fri Apr 23 2021 Michael Chang <mchang@suse.com>
 - Fix obsolete syslog in systemd unit file and updating to use journal as
   StandardOutput (bsc#1185149)
