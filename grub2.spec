@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        44.1
+Release:        45.13
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -1479,6 +1479,9 @@ fi
 %endif
 
 %changelog
+* Fri May 28 2021 Michael Chang <mchang@suse.com>
+- Fix crash in launching gfxmenu without theme file (bsc#1186481)
+  * grub2-gfxmenu-support-scrolling-menu-entry-s-text.patch
 * Tue May 11 2021 Michael Chang <mchang@suse.com>
 - Fix plaintext password in grub config didn't work to unlock menu entry if
   enabling secure boot in UEFI (bsc#1181892)
