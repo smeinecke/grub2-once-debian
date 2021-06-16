@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit
+BuildRequires:  glibc-devel-32bit glibc-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.04
-Release:        45.13
+Release:        46.14
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -1479,6 +1479,11 @@ fi
 %endif
 
 %changelog
+* Mon May 31 2021 Michael Chang <mchang@suse.com>
+- Fix running grub2-once leads to failure of starting systemd service in the
+  boot sequence (bsc#1169460)
+  * grub2-once
+  * grub2-once.service
 * Fri May 28 2021 Michael Chang <mchang@suse.com>
 - Fix crash in launching gfxmenu without theme file (bsc#1186481)
   * grub2-gfxmenu-support-scrolling-menu-entry-s-text.patch
