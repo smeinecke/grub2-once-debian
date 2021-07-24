@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit glibc-32bit
+BuildRequires:  glibc-devel-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -148,8 +148,8 @@ BuildRequires:  update-bootloader-rpm-macros
 %define only_x86_64 %{nil}
 %endif
 
-Version:        2.04
-Release:        46.51
+Version:        2.06
+Release:        2.15
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -170,6 +170,7 @@ Source16:       grub2-xen-pv-firmware.cfg
 # required hook for systemd-sleep (bsc#941758)
 Source17:       grub2-systemd-sleep.sh
 Source18:       grub2-check-default.sh
+Source19:       grub2-instdev-fixup.pl
 Source1000:     PATCH_POLICY
 Patch1:         rename-grub-info-file-to-grub2.patch
 Patch2:         grub2-linux.patch
@@ -202,7 +203,6 @@ Patch53:        grub2-getroot-treat-mdadm-ddf-as-simple-device.patch
 Patch56:        grub2-setup-try-fs-embed-if-mbr-gap-too-small.patch
 Patch58:        grub2-xen-linux16.patch
 Patch59:        grub2-efi-disable-video-cirrus-and-bochus.patch
-Patch60:        grub2-editenv-add-warning-message.patch
 Patch61:        grub2-vbe-blacklist-preferred-1440x900x32.patch
 Patch64:        grub2-grubenv-in-btrfs-header.patch
 Patch65:        grub2-mkconfig-aarch64.patch
@@ -217,13 +217,11 @@ Patch79:        grub2-efi-chainload-harder.patch
 Patch80:        grub2-emu-4-all.patch
 Patch81:        grub2-lvm-allocate-metadata-buffer-from-raw-contents.patch
 Patch82:        grub2-diskfilter-support-pv-without-metadatacopies.patch
-Patch83:        grub2-efi-uga-64bit-fb.patch
 Patch84:        grub2-s390x-09-improve-zipl-setup.patch
 Patch85:        grub2-getroot-scan-disk-pv.patch
 Patch92:        grub2-util-30_os-prober-multiple-initrd.patch
 Patch93:        grub2-getroot-support-nvdimm.patch
 Patch94:        grub2-install-fix-not-a-directory-error.patch
-Patch95:        grub2-verifiers-fix-system-freeze-if-verify-failed.patch
 Patch96:        grub-install-force-journal-draining-to-ensure-data-i.patch
 Patch97:        grub2-s390x-skip-zfcpdump-image.patch
 # Btrfs snapshot booting related patches
@@ -270,8 +268,6 @@ Patch284:       0005-grub.texi-Add-net_bootp6-doument.patch
 Patch285:       0006-bootp-Add-processing-DHCPACK-packet-from-HTTP-Boot.patch
 Patch286:       0007-efinet-Setting-network-from-UEFI-device-path.patch
 Patch287:       0008-efinet-Setting-DNS-server-from-UEFI-protocol.patch
-# Fix GOP BLT support (FATE#322332)
-Patch311:       grub2-efi-gop-add-blt.patch
 # TPM Support (FATE#315831)
 Patch411:       0012-tpm-Build-tpm-as-module.patch
 # UEFI HTTP and related network protocol support (FATE#320130)
@@ -289,37 +285,6 @@ Patch501:       grub2-btrfs-help-on-snapper-rollback.patch
 Patch510:       grub2-video-limit-the-resolution-for-fixed-bimap-font.patch
 # Support long menuentries (FATE#325760)
 Patch511:       grub2-gfxmenu-support-scrolling-menu-entry-s-text.patch
-# RISC-V fixes
-Patch601:       risc-v-fix-computation-of-pc-relative-relocation-offset.patch
-Patch602:       risc-v-add-clzdi2-symbol.patch
-Patch603:       grub-install-define-default-platform-for-risc-v.patch
-# Fix gcc-10 build fail
-Patch610:       0001-mdraid1x_linux-Fix-gcc10-error-Werror-array-bounds.patch
-Patch611:       0002-zfs-Fix-gcc10-error-Werror-zero-length-bounds.patch
-# bsc#1166409 - Grub netbooting does not search for grub.cfg files with mac
-# address or ip address in filename
-Patch700:       0001-normal-Move-common-datetime-functions-out-of-the-nor.patch
-Patch701:       0002-kern-Add-X-option-to-printf-functions.patch
-Patch702:       0003-normal-main-Search-for-specific-config-files-for-net.patch
-Patch703:       0004-datetime-Enable-the-datetime-module-for-the-emu-plat.patch
-# bsc#1168994 VUL-0: EMBARGOED: CVE-2020-10713: grub2: parsing overflows can
-# bypass secure boot restrictions
-Patch704:       0001-yylex-Make-lexer-fatal-errors-actually-be-fatal.patch
-# bsc#1173812 VUL-0: EMBARGOED: CVE-2020-14308, CVE-2020-14309, CVE-2020-14310,
-# CVE-2020-14311: grub2: avoid integer overflows
-Patch705:       0002-safemath-Add-some-arithmetic-primitives-that-check-f.patch
-Patch706:       0003-calloc-Make-sure-we-always-have-an-overflow-checking.patch
-Patch707:       0004-calloc-Use-calloc-at-most-places.patch
-Patch708:       0005-malloc-Use-overflow-checking-primitives-where-we-do-.patch
-Patch709:       0006-iso9660-Don-t-leak-memory-on-realloc-failures.patch
-Patch710:       0007-font-Do-not-load-more-than-one-NAME-section.patch
-# bsc#1174463 VUL-0: EMBARGOED: CVE-2020-15706: grub2: script: Avoid a
-# use-after-free when redefining a function during execution
-Patch711:       0008-script-Remove-unused-fields-from-grub_script_functio.patch
-Patch712:       0009-script-Avoid-a-use-after-free-when-redefining-a-func.patch
-# bsc#1174570 VUL-0: EMBARGOED: CVE-2020-15707: grub2: linux: Fix integer
-# overflows in initrd size handling
-Patch713:       0010-linux-Fix-integer-overflows-in-initrd-size-handling.patch
 Patch714:       0001-kern-mm.c-Make-grub_calloc-inline.patch
 Patch716:       0002-cmdline-Provide-cmdline-functions-as-module.patch
 # bsc#1172745 L3: SLES 12 SP4 - Slow boot of system after updated kernel -
@@ -328,71 +293,19 @@ Patch717:       0001-ieee1275-powerpc-implements-fibre-channel-discovery-.patch
 Patch718:       0002-ieee1275-powerpc-enables-device-mapper-discovery.patch
 Patch719:       0001-Unify-the-check-to-enable-btrfs-relative-path.patch
 Patch721:       0001-efi-linux-provide-linux-command.patch
-# Improve the error handling when grub2-install fails with short mbr gap
-# (bsc#1176062)
-Patch722:       0001-Warn-if-MBR-gap-is-small-and-user-uses-advanced-modu.patch
-Patch723:       0002-grub-install-Avoid-incompleted-install-on-i386-pc.patch
 # Secure Boot support in GRUB on aarch64 (jsc#SLE-15864)
 Patch730:       0001-Add-support-for-Linux-EFI-stub-loading-on-aarch64.patch
 Patch731:       0002-arm64-make-sure-fdt-has-address-cells-and-size-cells.patch
 Patch732:       0003-Make-grub_error-more-verbose.patch
 Patch733:       0004-arm-arm64-loader-Better-memory-allocation-and-error-.patch
-Patch734:       0005-Make-linux_arm_kernel_header.hdr_offset-be-at-the-ri.patch
 Patch735:       0006-efi-Set-image-base-address-before-jumping-to-the-PE-.patch
-Patch737:       0008-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
-Patch738:       0009-squash-Add-support-for-linuxefi.patch
 Patch739:       0001-Fix-build-error-in-binutils-2.36.patch
 Patch740:       0001-emu-fix-executable-stack-marking.patch
-# Boothole2
-Patch741:       0001-include-grub-i386-linux.h-Include-missing-grub-types.patch
-Patch742:       0002-efi-Make-shim_lock-GUID-and-protocol-type-public.patch
-Patch743:       0003-efi-Return-grub_efi_status_t-from-grub_efi_get_varia.patch
-Patch744:       0004-efi-Add-a-function-to-read-EFI-variables-with-attrib.patch
-Patch745:       0005-efi-Add-secure-boot-detection.patch
-Patch746:       0006-efi-Only-register-shim_lock-verifier-if-shim_lock-pr.patch
-Patch747:       0007-verifiers-Move-verifiers-API-to-kernel-image.patch
-Patch748:       0008-efi-Move-the-shim_lock-verifier-to-the-GRUB-core.patch
-Patch749:       0009-kern-Add-lockdown-support.patch
-Patch750:       0010-kern-lockdown-Set-a-variable-if-the-GRUB-is-locked-d.patch
-Patch751:       0011-efi-Lockdown-the-GRUB-when-the-UEFI-Secure-Boot-is-e.patch
-Patch752:       0012-efi-Use-grub_is_lockdown-instead-of-hardcoding-a-dis.patch
-Patch753:       0013-acpi-Don-t-register-the-acpi-command-when-locked-dow.patch
-Patch754:       0014-mmap-Don-t-register-cutmem-and-badram-commands-when-.patch
-Patch755:       0015-commands-Restrict-commands-that-can-load-BIOS-or-DT-.patch
-Patch756:       0016-commands-setpci-Restrict-setpci-command-when-locked-.patch
-Patch757:       0017-commands-hdparm-Restrict-hdparm-command-when-locked-.patch
-Patch758:       0018-gdb-Restrict-GDB-access-when-locked-down.patch
-Patch759:       0019-loader-xnu-Don-t-allow-loading-extension-and-package.patch
-Patch760:       0020-dl-Only-allow-unloading-modules-that-are-not-depende.patch
-Patch761:       0021-usb-Avoid-possible-out-of-bound-accesses-caused-by-m.patch
-Patch762:       0022-lib-arg-Block-repeated-short-options-that-require-an.patch
-Patch763:       0023-commands-menuentry-Fix-quoting-in-setparams_prefix.patch
-Patch764:       0024-kern-parser-Fix-resource-leak-if-argc-0.patch
-Patch765:       0025-kern-parser-Fix-a-memory-leak.patch
-Patch766:       0026-kern-parser-Introduce-process_char-helper.patch
-Patch767:       0027-kern-parser-Introduce-terminate_arg-helper.patch
-Patch768:       0028-kern-parser-Refactor-grub_parser_split_cmdline-clean.patch
-Patch769:       0029-kern-buffer-Add-variable-sized-heap-buffer.patch
-Patch770:       0030-kern-parser-Fix-a-stack-buffer-overflow.patch
-Patch771:       0031-util-mkimage-Remove-unused-code-to-add-BSS-section.patch
-Patch772:       0032-util-mkimage-Use-grub_host_to_target32-instead-of-gr.patch
-Patch773:       0033-util-mkimage-Always-use-grub_host_to_target32-to-ini.patch
-Patch774:       0034-util-mkimage-Unify-more-of-the-PE32-and-PE32-header-.patch
-Patch775:       0035-util-mkimage-Reorder-PE-optional-header-fields-set-u.patch
-Patch776:       0036-util-mkimage-Improve-data_size-value-calculation.patch
-Patch777:       0037-util-mkimage-Refactor-section-setup-to-use-a-helper.patch
-Patch778:       0038-util-mkimage-Add-an-option-to-import-SBAT-metadata-i.patch
-Patch779:       0039-grub-install-common-Add-sbat-option.patch
-Patch780:       0040-shim_lock-Only-skip-loading-shim_lock-verifier-with-.patch
-Patch781:       0041-squash-Add-secureboot-support-on-efi-chainloader.patch
-Patch782:       0042-squash-grub2-efi-chainload-harder.patch
-Patch783:       0043-squash-Don-t-allow-insmod-when-secure-boot-is-enable.patch
 Patch784:       0044-squash-kern-Add-lockdown-support.patch
-Patch785:       0045-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
 Patch786:       0046-squash-verifiers-Move-verifiers-API-to-kernel-image.patch
-Patch787:       0001-kern-efi-sb-Add-chainloaded-image-as-shim-s-verifiab.patch
 Patch788:       0001-ieee1275-Avoiding-many-unecessary-open-close.patch
 Patch789:       0001-Workaround-volatile-efi-boot-variable.patch
+Patch790:       0001-30_uefi-firmware-fix-printf-format-with-null-byte.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -617,7 +530,6 @@ swap partition while in resuming
 %patch56 -p1
 %patch58 -p1
 %patch59 -p1
-%patch60 -p1
 %patch61 -p1
 %patch64 -p1
 %patch65 -p1
@@ -632,13 +544,11 @@ swap partition while in resuming
 %patch80 -p1
 %patch81 -p1
 %patch82 -p1
-%patch83 -p1
 %patch84 -p1
 %patch85 -p1
 %patch92 -p1
 %patch93 -p1
 %patch94 -p1
-%patch95 -p1
 %patch96 -p1
 %patch97 -p1
 %patch101 -p1
@@ -678,7 +588,6 @@ swap partition while in resuming
 %patch285 -p1
 %patch286 -p1
 %patch287 -p1
-%patch311 -p1
 %patch411 -p1
 %patch420 -p1
 %patch421 -p1
@@ -689,92 +598,24 @@ swap partition while in resuming
 %patch501 -p1
 %patch510 -p1
 %patch511 -p1
-%patch601 -p1
-%patch602 -p1
-%patch603 -p1
-%patch610 -p1
-%patch611 -p1
-%patch700 -p1
-%patch701 -p1
-%patch702 -p1
-%patch703 -p1
-%patch704 -p1
-%patch705 -p1
-%patch706 -p1
-%patch707 -p1
-%patch708 -p1
-%patch709 -p1
-%patch710 -p1
-%patch711 -p1
-%patch712 -p1
-%patch713 -p1
 %patch714 -p1
 %patch716 -p1
 %patch717 -p1
 %patch718 -p1
 %patch719 -p1
 %patch721 -p1
-%patch722 -p1
-%patch723 -p1
 %patch730 -p1
 %patch731 -p1
 %patch732 -p1
 %patch733 -p1
-%patch734 -p1
 %patch735 -p1
-%patch737 -p1
-%patch738 -p1
 %patch739 -p1
 %patch740 -p1
-%patch741 -p1
-%patch742 -p1
-%patch743 -p1
-%patch744 -p1
-%patch745 -p1
-%patch746 -p1
-%patch747 -p1
-%patch748 -p1
-%patch749 -p1
-%patch750 -p1
-%patch751 -p1
-%patch752 -p1
-%patch753 -p1
-%patch754 -p1
-%patch755 -p1
-%patch756 -p1
-%patch757 -p1
-%patch758 -p1
-%patch759 -p1
-%patch760 -p1
-%patch761 -p1
-%patch762 -p1
-%patch763 -p1
-%patch764 -p1
-%patch765 -p1
-%patch766 -p1
-%patch767 -p1
-%patch768 -p1
-%patch769 -p1
-%patch770 -p1
-%patch771 -p1
-%patch772 -p1
-%patch773 -p1
-%patch774 -p1
-%patch775 -p1
-%patch776 -p1
-%patch777 -p1
-%patch778 -p1
-%patch779 -p1
-%patch780 -p1
-%patch781 -p1
-%patch782 -p1
-%patch783 -p1
 %patch784 -p1
-%patch785 -p1
 %patch786 -p1
-%patch787 -p1
 %patch788 -p1
 %patch789 -p1
+%patch790 -p1
 
 %build
 # collect evidence to debug spurious build failure on SLE15
@@ -872,7 +713,7 @@ make %{?_smp_mflags}
 
 FS_MODULES="btrfs ext2 xfs jfs reiserfs"
 CD_MODULES=" all_video boot cat chain configfile echo true \
-		efinet font gfxmenu gfxterm gzio halt iso9660 \
+		efifwsetup efinet font gfxmenu gfxterm gzio halt iso9660 \
 		jpeg minicmd normal part_apple part_msdos part_gpt \
 		password password_pbkdf2 png reboot search search_fs_uuid \
 		search_fs_file search_label sleep test video fat loadenv"
@@ -1073,6 +914,9 @@ install -m 644 -D %{SOURCE15} %{buildroot}/%{_unitdir}/grub2-once.service
 install -m 755 -D %{SOURCE17} %{buildroot}/%{_libdir}/systemd/system-sleep/grub2.sleep
 %endif
 install -m 755 -D %{SOURCE18} %{buildroot}/%{_sbindir}/grub2-check-default
+%ifarch  %{ix86} x86_64
+install -m 755 -D %{SOURCE19} %{buildroot}/%{_libexecdir}/grub2-instdev-fixup.pl
+%endif
 
 R="%{buildroot}"
 %ifarch %{ix86} x86_64
@@ -1287,6 +1131,7 @@ fi
 %config(noreplace) %{_sysconfdir}/grub.d/00_header
 %config(noreplace) %{_sysconfdir}/grub.d/10_linux
 %config(noreplace) %{_sysconfdir}/grub.d/20_linux_xen
+%config(noreplace) %{_sysconfdir}/grub.d/30_uefi-firmware
 %config(noreplace) %{_sysconfdir}/grub.d/40_custom
 %config(noreplace) %{_sysconfdir}/grub.d/41_custom
 %config(noreplace) %{_sysconfdir}/grub.d/90_persistent
@@ -1405,6 +1250,9 @@ fi
 %endif
 %{_datadir}/%{name}/%{grubarch}/kernel.exec
 %{_datadir}/%{name}/%{grubarch}/modinfo.sh
+%ifarch %{ix86} x86_64
+%{_libexecdir}/%{name}-instdev-fixup.pl
+%endif
 
 %files %{grubarch}-debug
 %defattr(-,root,root,-)
@@ -1479,6 +1327,132 @@ fi
 %endif
 
 %changelog
+* Mon Jun 28 2021 Michael Chang <mchang@suse.com>
+- Fix error not a btrfs filesystem on s390x (bsc#1187645)
+  * 80_suse_btrfs_snapshot
+* Wed Jun 23 2021 Michael Chang <mchang@suse.com>
+- Fix error gfxterm isn't found with multiple terminals (bsc#1187565)
+  * grub2-fix-error-terminal-gfxterm-isn-t-found.patch
+* Mon Jun 21 2021 Michael Chang <mchang@suse.com>
+- Fix boot failure after kdump due to the content of grub.cfg is not
+  completed with pending modificaton in xfs journal (bsc#1186975)
+  * grub-install-force-journal-draining-to-ensure-data-i.patch
+- Patch refreshed
+  * grub2-mkconfig-default-entry-correction.patch
+* Thu Jun  3 2021 Michael Chang <mchang@suse.com>
+- Version bump to 2.06
+  * rediff
+  - 0001-add-support-for-UEFI-network-protocols.patch
+  - 0002-net-read-bracketed-ipv6-addrs-and-port-numbers.patch
+  - 0003-Make-grub_error-more-verbose.patch
+  - 0003-bootp-New-net_bootp6-command.patch
+  - 0005-grub.texi-Add-net_bootp6-doument.patch
+  - 0006-bootp-Add-processing-DHCPACK-packet-from-HTTP-Boot.patch
+  - 0006-efi-Set-image-base-address-before-jumping-to-the-PE-.patch
+  - 0008-efinet-Setting-DNS-server-from-UEFI-protocol.patch
+  - 0046-squash-verifiers-Move-verifiers-API-to-kernel-image.patch
+  - grub-install-force-journal-draining-to-ensure-data-i.patch
+  - grub2-btrfs-01-add-ability-to-boot-from-subvolumes.patch
+  - grub2-diskfilter-support-pv-without-metadatacopies.patch
+  - grub2-efi-HP-workaround.patch
+  - grub2-efi-xen-cfg-unquote.patch
+  - grub2-efi-xen-chainload.patch
+  - grub2-fix-menu-in-xen-host-server.patch
+  - grub2-gfxmenu-support-scrolling-menu-entry-s-text.patch
+  - grub2-install-remove-useless-check-PReP-partition-is-empty.patch
+  - grub2-lvm-allocate-metadata-buffer-from-raw-contents.patch
+  - grub2-mkconfig-default-entry-correction.patch
+  - grub2-pass-corret-root-for-nfsroot.patch
+  - grub2-s390x-03-output-7-bit-ascii.patch
+  - grub2-s390x-04-grub2-install.patch
+  - grub2-secureboot-install-signed-grub.patch
+  - grub2-setup-try-fs-embed-if-mbr-gap-too-small.patch
+  - use-grub2-as-a-package-name.patch
+  * update by patch squashed:
+  - 0001-Add-support-for-Linux-EFI-stub-loading-on-aarch64.patch
+  - grub2-efi-chainload-harder.patch
+  - grub2-secureboot-no-insmod-on-sb.patch
+  - grub2-secureboot-chainloader.patch
+  - grub2-secureboot-add-linuxefi.patch
+  * remove squashed patches:
+  - 0008-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
+  - 0009-squash-Add-support-for-linuxefi.patch
+  - 0041-squash-Add-secureboot-support-on-efi-chainloader.patch
+  - 0042-squash-grub2-efi-chainload-harder.patch
+  - 0043-squash-Don-t-allow-insmod-when-secure-boot-is-enable.patch
+  - 0045-squash-Add-support-for-Linux-EFI-stub-loading-on-aar.patch
+  * drop upstream patches:
+  - 0001-Warn-if-MBR-gap-is-small-and-user-uses-advanced-modu.patch
+  - 0001-include-grub-i386-linux.h-Include-missing-grub-types.patch
+  - 0001-kern-efi-sb-Add-chainloaded-image-as-shim-s-verifiab.patch
+  - 0001-mdraid1x_linux-Fix-gcc10-error-Werror-array-bounds.patch
+  - 0001-normal-Move-common-datetime-functions-out-of-the-nor.patch
+  - 0001-yylex-Make-lexer-fatal-errors-actually-be-fatal.patch
+  - 0002-efi-Make-shim_lock-GUID-and-protocol-type-public.patch
+  - 0002-grub-install-Avoid-incompleted-install-on-i386-pc.patch
+  - 0002-kern-Add-X-option-to-printf-functions.patch
+  - 0002-safemath-Add-some-arithmetic-primitives-that-check-f.patch
+  - 0002-zfs-Fix-gcc10-error-Werror-zero-length-bounds.patch
+  - 0003-calloc-Make-sure-we-always-have-an-overflow-checking.patch
+  - 0003-efi-Return-grub_efi_status_t-from-grub_efi_get_varia.patch
+  - 0003-normal-main-Search-for-specific-config-files-for-net.patch
+  - 0004-calloc-Use-calloc-at-most-places.patch
+  - 0004-datetime-Enable-the-datetime-module-for-the-emu-plat.patch
+  - 0004-efi-Add-a-function-to-read-EFI-variables-with-attrib.patch
+  - 0005-Make-linux_arm_kernel_header.hdr_offset-be-at-the-ri.patch
+  - 0005-efi-Add-secure-boot-detection.patch
+  - 0005-malloc-Use-overflow-checking-primitives-where-we-do-.patch
+  - 0006-efi-Only-register-shim_lock-verifier-if-shim_lock-pr.patch
+  - 0006-iso9660-Don-t-leak-memory-on-realloc-failures.patch
+  - 0007-font-Do-not-load-more-than-one-NAME-section.patch
+  - 0007-verifiers-Move-verifiers-API-to-kernel-image.patch
+  - 0008-efi-Move-the-shim_lock-verifier-to-the-GRUB-core.patch
+  - 0008-script-Remove-unused-fields-from-grub_script_functio.patch
+  - 0009-kern-Add-lockdown-support.patch
+  - 0009-script-Avoid-a-use-after-free-when-redefining-a-func.patch
+  - 0010-kern-lockdown-Set-a-variable-if-the-GRUB-is-locked-d.patch
+  - 0010-linux-Fix-integer-overflows-in-initrd-size-handling.patch
+  - 0011-efi-Lockdown-the-GRUB-when-the-UEFI-Secure-Boot-is-e.patch
+  - 0012-efi-Use-grub_is_lockdown-instead-of-hardcoding-a-dis.patch
+  - 0013-acpi-Don-t-register-the-acpi-command-when-locked-dow.patch
+  - 0014-mmap-Don-t-register-cutmem-and-badram-commands-when-.patch
+  - 0015-commands-Restrict-commands-that-can-load-BIOS-or-DT-.patch
+  - 0016-commands-setpci-Restrict-setpci-command-when-locked-.patch
+  - 0017-commands-hdparm-Restrict-hdparm-command-when-locked-.patch
+  - 0018-gdb-Restrict-GDB-access-when-locked-down.patch
+  - 0019-loader-xnu-Don-t-allow-loading-extension-and-package.patch
+  - 0020-dl-Only-allow-unloading-modules-that-are-not-depende.patch
+  - 0021-usb-Avoid-possible-out-of-bound-accesses-caused-by-m.patch
+  - 0022-lib-arg-Block-repeated-short-options-that-require-an.patch
+  - 0023-commands-menuentry-Fix-quoting-in-setparams_prefix.patch
+  - 0024-kern-parser-Fix-resource-leak-if-argc-0.patch
+  - 0025-kern-parser-Fix-a-memory-leak.patch
+  - 0026-kern-parser-Introduce-process_char-helper.patch
+  - 0027-kern-parser-Introduce-terminate_arg-helper.patch
+  - 0028-kern-parser-Refactor-grub_parser_split_cmdline-clean.patch
+  - 0029-kern-buffer-Add-variable-sized-heap-buffer.patch
+  - 0030-kern-parser-Fix-a-stack-buffer-overflow.patch
+  - 0031-util-mkimage-Remove-unused-code-to-add-BSS-section.patch
+  - 0032-util-mkimage-Use-grub_host_to_target32-instead-of-gr.patch
+  - 0033-util-mkimage-Always-use-grub_host_to_target32-to-ini.patch
+  - 0034-util-mkimage-Unify-more-of-the-PE32-and-PE32-header-.patch
+  - 0035-util-mkimage-Reorder-PE-optional-header-fields-set-u.patch
+  - 0036-util-mkimage-Improve-data_size-value-calculation.patch
+  - 0037-util-mkimage-Refactor-section-setup-to-use-a-helper.patch
+  - 0038-util-mkimage-Add-an-option-to-import-SBAT-metadata-i.patch
+  - 0039-grub-install-common-Add-sbat-option.patch
+  - 0040-shim_lock-Only-skip-loading-shim_lock-verifier-with-.patch
+  - grub-install-define-default-platform-for-risc-v.patch
+  - grub2-editenv-add-warning-message.patch
+  - grub2-efi-gop-add-blt.patch
+  - grub2-efi-uga-64bit-fb.patch
+  - grub2-verifiers-fix-system-freeze-if-verify-failed.patch
+  - risc-v-add-clzdi2-symbol.patch
+  - risc-v-fix-computation-of-pc-relative-relocation-offset.patch
+- Add grub2-instdev-fixup.pl for correcting /etc/default/grub_installdevice to
+  use disk devie if grub has been installed to it
+- Add 0001-30_uefi-firmware-fix-printf-format-with-null-byte.patch to fix
+  detection of efi fwsetup support
 * Mon May 31 2021 Michael Chang <mchang@suse.com>
 - Fix running grub2-once leads to failure of starting systemd service in the
   boot sequence (bsc#1169460)
