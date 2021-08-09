@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        2.15
+Release:        4.1
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -257,8 +257,8 @@ Patch212:       grub2-install-remove-useless-check-PReP-partition-is-empty.patch
 Patch213:       grub2-Fix-incorrect-netmask-on-ppc64.patch
 Patch215:       grub2-ppc64-cas-new-scope.patch
 Patch218:       grub2-ppc64-cas-fix-double-free.patch
-Patch233:       grub2-use-stat-instead-of-udevadm-for-partition-lookup.patch
-Patch234:       fix-grub2-use-stat-instead-of-udevadm-for-partition-lookup-with-new-glibc.patch
+Patch233:       0001-osdep-Introduce-include-grub-osdep-major.h-and-use-i.patch
+Patch234:       0002-osdep-linux-hostdisk-Use-stat-instead-of-udevadm-for.patch
 Patch236:       grub2-efi_gop-avoid-low-resolution.patch
 # Support HTTP Boot IPv4 and IPv6 (fate#320129)
 Patch281:       0002-net-read-bracketed-ipv6-addrs-and-port-numbers.patch
@@ -1327,6 +1327,16 @@ fi
 %endif
 
 %changelog
+* Wed Aug  4 2021 Stefan Seyfried <seife+obs@b1-systems.com>
+- update grub2-systemd-sleep.sh to fix hibernation by avoiding the
+  error "no kernelfile matching the running kernel found" on
+  usrmerged setup
+* Thu Jul 22 2021 Petr Vorel <pvorel@suse.cz>
+- Replace grub2-use-stat-instead-of-udevadm-for-partition-lookup.patch and
+  fix-grub2-use-stat-instead-of-udevadm-for-partition-lookup-with-new-glibc.patch
+  with upstream backport:
+  0001-osdep-Introduce-include-grub-osdep-major.h-and-use-i.patch and
+  0002-osdep-linux-hostdisk-Use-stat-instead-of-udevadm-for.patch.
 * Mon Jun 28 2021 Michael Chang <mchang@suse.com>
 - Fix error not a btrfs filesystem on s390x (bsc#1187645)
   * 80_suse_btrfs_snapshot
