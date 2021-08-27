@@ -1,0 +1,46 @@
+name: Download grub2 sources
+on:
+  schedule:
+    - cron:  '15 15 * * *'
+  workflow_dispatch:
+
+env:
+  URL: https://download.opensuse.org/repositories/Base:/System/openSUSE_Factory/src
+
+jobs:
+  grub_src:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Detect new and git version
+        run: |
+          echo "latest_ver=$(curl -s ${{ env.URL }}/ | grep -E -o '>grub2-([0-9]*).([0-9]*)-([0-9]*).([0-9]*)' \
+            | sed 's/^.* //;s/>grub2-//;$!d')" >> $GITHUB_ENV
+
+          echo "git_ver=$(git tag | sed '$!d')" >> $GITHUB_ENV
+
+      - name: Download new version
+        run: |
+          if [ "$(echo ${{ env.latest_ver }} | grep -E -o '([0-9]*).([0-9]*)-([0-9]*)')" != \
+               "$(echo ${{ env.git_ver }} | grep -E -o '([0-9]*).([0-9]*)-([0-9]*)')" ]; then
+
+            rm -rf *
+            curl -L -O ${{ env.URL }}/grub2-${{ env.latest_ver }}.src.rpm
+            rpm2cpio grub2-${{ env.latest_ver }}.src.rpm | cpio -idv
+            rm grub2-${{ env.latest_ver }}.src.rpm
+
+            # Setup git
+            git config user.name 'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+            # Commit changes
+            git add .
+            git commit -a -m "New version: ${{ env.latest_ver }}"
+            git tag ${{ env.latest_ver }}
+            git push
+            git push origin ${{ env.latest_ver }}
+          fi
