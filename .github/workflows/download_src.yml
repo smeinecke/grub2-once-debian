@@ -44,3 +44,6 @@ jobs:
             git push
             git push origin ${{ env.latest_ver }}
           fi
+          
+          echo Latest version: ${{ env.latest_ver }}
+          echo GitHub version: ${{ env.git_ver }}
