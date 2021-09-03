@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        5.1
+Release:        6.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -347,17 +347,6 @@ architecture.  It support rich scale of kernel formats, file systems,
 computer architectures and hardware devices.
 
 This package includes user space utlities to manage GRUB on your system.
-
-
-Authors:
---------
-    Gordon Matzigkeit
-    Yoshinori K. Okuji
-    Colin Watson
-    Colin D. Bennett
-    Vesa Jääskeläinen
-    Robert Millan
-    Carles Pina
 
 %package branding-upstream
 
@@ -999,6 +988,7 @@ fi
 %else
 %license COPYING
 %endif
+%doc AUTHORS
 %doc NEWS README
 %doc THANKS TODO ChangeLog
 %doc docs/autoiso.cfg docs/osdetect.cfg
@@ -1210,6 +1200,11 @@ fi
 %endif
 
 %changelog
+* Tue Aug 31 2021 Petr Vorel <pvorel@suse.cz>
+- Delete the author list from %%description (the %%description section is
+  literally for package descriptions (only) these days, encoding was also
+  problematic).
+- Add %%doc AUTHORS to get packaged that info
 * Wed Aug  4 2021 Stefan Seyfried <seife+obs@b1-systems.com>
 - update grub2-systemd-sleep.sh to fix hibernation by avoiding the
   error "no kernelfile matching the running kernel found" on
