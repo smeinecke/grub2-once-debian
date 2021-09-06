@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit
+BuildRequires:  glibc-devel-32bit glibc-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        6.2
+Release:        7.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -235,7 +235,6 @@ Patch107:       grub2-btrfs-07-subvol-fallback.patch
 Patch108:       grub2-btrfs-08-workaround-snapshot-menu-default-entry.patch
 Patch109:       grub2-btrfs-09-get-default-subvolume.patch
 Patch110:       grub2-btrfs-10-config-directory.patch
-Patch111:       0001-btrfs-disable-zstd-support-for-i386-pc.patch
 # Support EFI xen loader
 Patch120:       grub2-efi-xen-chainload.patch
 Patch121:       grub2-efi-chainloader-root.patch
@@ -306,6 +305,7 @@ Patch786:       0046-squash-verifiers-Move-verifiers-API-to-kernel-image.patch
 Patch788:       0001-ieee1275-Avoiding-many-unecessary-open-close.patch
 Patch789:       0001-Workaround-volatile-efi-boot-variable.patch
 Patch790:       0001-30_uefi-firmware-fix-printf-format-with-null-byte.patch
+Patch791:       0001-i386-pc-build-btrfs-zstd-support-into-separate-modul.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -1200,6 +1200,11 @@ fi
 %endif
 
 %changelog
+* Wed Sep  1 2021 Michael Chang <mchang@suse.com>
+- Add btrfs zstd compression on i386-pc and also make sure it won't break
+  existing grub installations (bsc#1161823)
+  * deleted 0001-btrfs-disable-zstd-support-for-i386-pc.patch
+  * added 0001-i386-pc-build-btrfs-zstd-support-into-separate-modul.patch
 * Tue Aug 31 2021 Petr Vorel <pvorel@suse.cz>
 - Delete the author list from %%description (the %%description section is
   literally for package descriptions (only) these days, encoding was also
