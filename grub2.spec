@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        7.2
+Release:        8.1
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -306,6 +306,7 @@ Patch788:       0001-ieee1275-Avoiding-many-unecessary-open-close.patch
 Patch789:       0001-Workaround-volatile-efi-boot-variable.patch
 Patch790:       0001-30_uefi-firmware-fix-printf-format-with-null-byte.patch
 Patch791:       0001-i386-pc-build-btrfs-zstd-support-into-separate-modul.patch
+Patch792:       0001-templates-Follow-the-path-of-usr-merged-kernel-confi.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -1200,6 +1201,9 @@ fi
 %endif
 
 %changelog
+* Tue Sep  7 2021 Michael Chang <mchang@suse.com>
+- Follow usr merge for looking up kernel config (bsc#1189782) (bsc#1190061)
+  * 0001-templates-Follow-the-path-of-usr-merged-kernel-confi.patch
 * Wed Sep  1 2021 Michael Chang <mchang@suse.com>
 - Add btrfs zstd compression on i386-pc and also make sure it won't break
   existing grub installations (bsc#1161823)
