@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit glibc-32bit
+BuildRequires:  glibc-devel-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        8.1
+Release:        9.1
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -1201,6 +1201,10 @@ fi
 %endif
 
 %changelog
+* Wed Sep 22 2021 rw@suse.com
+- Improve support for SLE Micro 5.1 on s390x.  (bsc#1190395)
+  * amend grub2-s390x-04-grub2-install.patch
+  * refresh grub2-s390x-11-secureboot.patch
 * Tue Sep  7 2021 Michael Chang <mchang@suse.com>
 - Follow usr merge for looking up kernel config (bsc#1189782) (bsc#1190061)
   * 0001-templates-Follow-the-path-of-usr-merged-kernel-confi.patch
