@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit
+BuildRequires:  glibc-devel-32bit glibc-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        9.1
+Release:        10.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -324,7 +324,7 @@ Requires:       grub2-%{grubarch} = %{version}-%{release}
 %ifarch s390x
 # required utilities by grub2-s390x-04-grub2-install.patch
 # use 'showconsole' to determine console device. (bnc#876743)
-Requires:       /sbin/showconsole
+Requires:       (/sbin/showconsole or /usr/sbin/showconsole)
 Requires:       kexec-tools
 # for /sbin/zipl used by grub2-zipl-setup
 Requires:       s390-tools
@@ -1201,6 +1201,8 @@ fi
 %endif
 
 %changelog
+* Tue Oct 19 2021 Fabian Vogt <fvogt@suse.com>
+- Fix installation on usrmerged s390x
 * Wed Sep 22 2021 rw@suse.com
 - Improve support for SLE Micro 5.1 on s390x.  (bsc#1190395)
   * amend grub2-s390x-04-grub2-install.patch
