@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit glibc-32bit
+BuildRequires:  glibc-devel-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        10.6
+Release:        11.4
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -307,6 +307,11 @@ Patch789:       0001-Workaround-volatile-efi-boot-variable.patch
 Patch790:       0001-30_uefi-firmware-fix-printf-format-with-null-byte.patch
 Patch791:       0001-i386-pc-build-btrfs-zstd-support-into-separate-modul.patch
 Patch792:       0001-templates-Follow-the-path-of-usr-merged-kernel-confi.patch
+Patch793:       0001-tpm-Pass-unknown-error-as-non-fatal-but-debug-print-.patch
+Patch794:       0001-Filter-out-POSIX-locale-for-translation.patch
+Patch795:       0001-ieee1275-implement-FCP-methods-for-WWPN-and-LUNs.patch
+Patch796:       0001-disk-diskfilter-Use-nodes-in-logical-volume-s-segmen.patch
+Patch797:       0001-fs-xfs-Fix-unreadable-filesystem-with-v4-superblock.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -1201,6 +1206,27 @@ fi
 %endif
 
 %changelog
+* Thu Oct 21 2021 Michael Chang <mchang@suse.com>
+- Remove openSUSE Tumbleweed specific handling for default grub
+  distributor (bsc#1191198)
+- Use /usr/lib/os-release as fallback (bsc#1191196)
+  * grub2-default-distributor.patch
+  * grub2-check-default.sh
+- VUL-0: grub2: grub2-once uses fixed file name in /var/tmp (bsc#1190474)
+  * grub2-once
+  * grub2-once.service
+- Fix unknown TPM error on buggy uefi firmware (bsc#1191504)
+  * 0001-tpm-Pass-unknown-error-as-non-fatal-but-debug-print-.patch
+- Fix error /boot/grub2/locale/POSIX.gmo not found (bsc#1189769)
+  * 0001-Filter-out-POSIX-locale-for-translation.patch
+- Fix error lvmid disk cannot be found after second disk added to the root
+  volume group (bsc#1189874) (bsc#1071559)
+  * 0001-ieee1275-implement-FCP-methods-for-WWPN-and-LUNs.patch
+- Fix error in grub installation due to unnecessary requirement to support
+  excessive device for the root logical volume (bsc#1184135)
+  * 0001-disk-diskfilter-Use-nodes-in-logical-volume-s-segmen.patch
+- Fix regression in reading xfs v4
+  * 0001-fs-xfs-Fix-unreadable-filesystem-with-v4-superblock.patch
 * Tue Oct 19 2021 Fabian Vogt <fvogt@suse.com>
 - Fix installation on usrmerged s390x
 * Wed Sep 22 2021 rw@suse.com
