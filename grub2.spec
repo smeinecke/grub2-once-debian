@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        11.4
+Release:        12.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -312,6 +312,8 @@ Patch794:       0001-Filter-out-POSIX-locale-for-translation.patch
 Patch795:       0001-ieee1275-implement-FCP-methods-for-WWPN-and-LUNs.patch
 Patch796:       0001-disk-diskfilter-Use-nodes-in-logical-volume-s-segmen.patch
 Patch797:       0001-fs-xfs-Fix-unreadable-filesystem-with-v4-superblock.patch
+Patch798:       0001-arm64-Fix-EFI-loader-kernel-image-allocation.patch
+Patch799:       0002-Arm-check-for-the-PE-magic-for-the-compiled-arch.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -329,8 +331,8 @@ Requires:       grub2-%{grubarch} = %{version}-%{release}
 %ifarch s390x
 # required utilities by grub2-s390x-04-grub2-install.patch
 # use 'showconsole' to determine console device. (bnc#876743)
-Requires:       (/sbin/showconsole or /usr/sbin/showconsole)
 Requires:       kexec-tools
+Requires:       (/sbin/showconsole or /usr/sbin/showconsole)
 # for /sbin/zipl used by grub2-zipl-setup
 Requires:       s390-tools
 %endif
@@ -1206,6 +1208,10 @@ fi
 %endif
 
 %changelog
+* Thu Nov 11 2021 Michael Chang <mchang@suse.com>
+- Fix arm64 kernel image not aligned on 64k boundary (bsc#1192522)
+  * 0001-arm64-Fix-EFI-loader-kernel-image-allocation.patch
+  * 0002-Arm-check-for-the-PE-magic-for-the-compiled-arch.patch
 * Thu Oct 21 2021 Michael Chang <mchang@suse.com>
 - Remove openSUSE Tumbleweed specific handling for default grub
   distributor (bsc#1191198)
