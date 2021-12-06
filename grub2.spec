@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit
+BuildRequires:  glibc-devel-32bit glibc-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        12.2
+Release:        13.4
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -314,6 +314,7 @@ Patch796:       0001-disk-diskfilter-Use-nodes-in-logical-volume-s-segmen.patch
 Patch797:       0001-fs-xfs-Fix-unreadable-filesystem-with-v4-superblock.patch
 Patch798:       0001-arm64-Fix-EFI-loader-kernel-image-allocation.patch
 Patch799:       0002-Arm-check-for-the-PE-magic-for-the-compiled-arch.patch
+Patch800:       0001-fs-btrfs-Make-extent-item-iteration-to-handle-gaps.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -1208,6 +1209,9 @@ fi
 %endif
 
 %changelog
+* Mon Dec  6 2021 Michael Chang <mchang@suse.com>
+- Fix extent not found when initramfs contains shared extents (bsc#1190982)
+  * 0001-fs-btrfs-Make-extent-item-iteration-to-handle-gaps.patch
 * Thu Nov 11 2021 Michael Chang <mchang@suse.com>
 - Fix arm64 kernel image not aligned on 64k boundary (bsc#1192522)
   * 0001-arm64-Fix-EFI-loader-kernel-image-allocation.patch
