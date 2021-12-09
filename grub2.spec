@@ -149,7 +149,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        13.4
+Release:        14.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -176,6 +176,7 @@ Patch1:         rename-grub-info-file-to-grub2.patch
 Patch2:         grub2-linux.patch
 Patch3:         use-grub2-as-a-package-name.patch
 Patch4:         info-dir-entry.patch
+Patch5:         grub2-simplefb.patch
 Patch6:         grub2-iterate-and-hook-for-extended-partition.patch
 Patch8:         grub2-ppc-terminfo.patch
 Patch9:         grub2-GRUB_CMDLINE_LINUX_RECOVERY-for-recovery-mode.patch
@@ -1209,6 +1210,9 @@ fi
 %endif
 
 %changelog
+* Wed Dec  8 2021 Michal Suchanek <msuchanek@suse.com>
+- Add support for simplefb (boo#1193532).
+  + grub2-simplefb.patch
 * Mon Dec  6 2021 Michael Chang <mchang@suse.com>
 - Fix extent not found when initramfs contains shared extents (bsc#1190982)
   * 0001-fs-btrfs-Make-extent-item-iteration-to-handle-gaps.patch
