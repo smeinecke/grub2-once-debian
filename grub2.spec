@@ -23,7 +23,7 @@ Name:           grub2
 %ifarch x86_64 ppc64
 BuildRequires:  gcc-32bit
 BuildRequires:  glibc-32bit
-BuildRequires:  glibc-devel-32bit
+BuildRequires:  glibc-devel-32bit glibc-32bit
 %else
 BuildRequires:  gcc
 BuildRequires:  glibc-devel
@@ -150,7 +150,7 @@ BuildRequires:  update-bootloader-rpm-macros
 %endif
 
 Version:        2.06
-Release:        16.1
+Release:        17.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -352,6 +352,7 @@ Patch832:       0020-appended-signatures-verification-tests.patch
 Patch833:       0021-appended-signatures-documentation.patch
 Patch834:       0022-ieee1275-enter-lockdown-based-on-ibm-secure-boot.patch
 Patch835:       0023-x509-allow-Digitial-Signature-plus-other-Key-Usages.patch
+Patch836:       0001-grub-install-Add-SUSE-signed-image-support-for-power.patch
 
 Requires:       gettext-runtime
 %if 0%{?suse_version} >= 1140
@@ -1322,6 +1323,10 @@ fi
 %endif
 
 %changelog
+* Fri Jan 14 2022 Michael Chang <mchang@suse.com>
+- Power guest secure boot with static keys: GRUB2 signing portion
+  (jsc#SLE-18271) (bsc#1192764)
+  * 0001-grub-install-Add-SUSE-signed-image-support-for-power.patch
 * Tue Jan 11 2022 Michael Chang <mchang@suse.com>
 - Power guest secure boot with static keys: GRUB2 signing portion
   (jsc#SLE-18271) (bsc#1192764)
