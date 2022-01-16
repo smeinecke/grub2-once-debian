@@ -200,32 +200,9 @@ if (@ARGV == 2 && ($ARGV[0] eq "--show-mapped")) {
 
 die "wrong command line options, try --help\n" if ($id_name eq "");
 
-open(SYSCONF, "</etc/sysconfig/bootloader") || die "cannot read bootloader sysconfig: $!\n";
-
-$grub2_dir = "";
-while (<SYSCONF>) {
-    chomp;
-    next if ( /^\s*#/ );
-    if ( /LOADER_TYPE=(\'|\"|)([^\'\"\s]+)\1(\s*|\s+#.*)$/ ) {
-        dPrint("OK  : $2\n");
-        if ($2 eq "grub2" || $2 eq "grub2-efi") {
-            # Found grub2 to be the incumbent loader ...
-            $grub2_dir = "/boot/grub2";
-            $grub2_reboot = "/usr/sbin/grub2-reboot";
-            $grub2_editenv = "/usr/bin/grub2-editenv";
-            # Note : Here we continues rather than exiting the loop, which
-            # results in different behavior than previous "the first wins". Now
-            # the latest defined LOADER_TYPE can be used to override any
-            # previous one, which is identical to the result of regular shell
-            # variable expansion to meet most people's expectation.
-        }
-    } else {
-        next if ( /^\s*$/ );
-        dPrint("SKIP: <$_>\n");
-    }
-}
-
-close (SYSCONF);
+$grub2_dir = "/boot/grub";
+$grub2_reboot = "/usr/sbin/grub-reboot";
+$grub2_editenv = "/usr/bin/grub-editenv";
 
 if ($id_name eq "--help" or $id_name eq "-h")
   {
