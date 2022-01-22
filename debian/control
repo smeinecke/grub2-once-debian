@@ -1,16 +1,18 @@
 Source: grub2-once
-Section: unknown
+Section: admin
 Priority: optional
-Maintainer: root <root@unknown>
+Maintainer: Stefan Meinecke <meinecke@greensec.de>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.5.1
-Homepage: <insert the upstream URL, if relevant>
+Homepage: https://build.opensuse.org/package/show/openSUSE:Factory/grub2
 #Vcs-Browser: https://salsa.debian.org/debian/grub2-once
 #Vcs-Git: https://salsa.debian.org/debian/grub2-once.git
 Rules-Requires-Root: no
 
 Package: grub2-once
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Depends: ${shlibs:Depends}, ${misc:Depends}, perl
+Description: Set the default boot entry for the next boot only.
+ Tool which reads all active bootloader entries from grub and
+ preselects active entries for the boot process.
+ Reset selection to default on next normal boot.
