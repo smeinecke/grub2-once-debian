@@ -1,10 +1,13 @@
 Package: grub2-once
 Version: 2.06-17.2-1
 Architecture: amd64
-Maintainer: root <root@unknown>
-Installed-Size: 10
-Section: unknown
+Maintainer: Stefan Meinecke <meinecke@greensec.de>
+Installed-Size: 26
+Depends: perl
+Section: admin
 Priority: optional
-Homepage: <insert the upstream URL, if relevant>
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Homepage: https://build.opensuse.org/package/show/openSUSE:Factory/grub2
+Description: Set the default boot entry for the next boot only.
+ Tool which reads all active bootloader entries from grub and
+ preselects active entries for the boot process.
+ Reset selection to default on next normal boot.
