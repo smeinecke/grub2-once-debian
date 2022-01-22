@@ -1,9 +1,9 @@
-Package: grub2-once
+Package: grub-once
 Version: 2.06-17.2-1
 Architecture: amd64
 Maintainer: Stefan Meinecke <meinecke@greensec.de>
 Installed-Size: 26
-Depends: perl
+Depends: perl, grub2-common
 Section: admin
 Priority: optional
 Homepage: https://build.opensuse.org/package/show/openSUSE:Factory/grub2

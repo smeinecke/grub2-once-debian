@@ -1,4 +1,4 @@
-Source: grub2-once
+Source: grub-once
 Section: admin
 Priority: optional
 Maintainer: Stefan Meinecke <meinecke@greensec.de>
@@ -9,9 +9,9 @@ Homepage: https://build.opensuse.org/package/show/openSUSE:Factory/grub2
 #Vcs-Git: https://salsa.debian.org/debian/grub2-once.git
 Rules-Requires-Root: no
 
-Package: grub2-once
+Package: grub-once
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, perl
+Depends: ${shlibs:Depends}, ${misc:Depends}, perl, grub2-common
 Description: Set the default boot entry for the next boot only.
  Tool which reads all active bootloader entries from grub and
  preselects active entries for the boot process.

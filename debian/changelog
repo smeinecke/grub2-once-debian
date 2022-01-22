@@ -1,5 +1,5 @@
-grub2-once (2.06-17.2-1) unstable; urgency=medium
+grub-once (2.06-17.2-1) unstable; urgency=medium
 
-  * Initial release 
+  * Initial release
 
- -- root <root@unknown>  Sun, 16 Jan 2022 17:11:56 +0100
+ -- Stefan Meinecke <meinecke@greensec.de>  Sun, 16 Jan 2022 17:11:56 +0100

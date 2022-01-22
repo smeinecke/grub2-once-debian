@@ -1,5 +1,0 @@
-2c146472e76e59180a208763f95e08a1  lib/systemd/system/grub2-once.service
-3039a83e8a224ce0ffd7533281cfa585  usr/sbin/grub2-once
-84c35d9341e1ed9eb03a73697eb7f411  usr/share/doc/grub2-once/README.Debian
-c9c7be3bcdebee59adafdb598217c653  usr/share/doc/grub2-once/changelog.Debian.gz
-98ffddaa51ab49afc11847e4b3680c7d  usr/share/doc/grub2-once/copyright
