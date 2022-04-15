@@ -3,10 +3,10 @@ Section: admin
 Priority: optional
 Maintainer: Stefan Meinecke <meinecke@greensec.de>
 Standards-Version: 4.5.1
+Build-Depends: debhelper (>= 10)
 Homepage: https://build.opensuse.org/package/show/openSUSE:Factory/grub2
 #Vcs-Browser: https://salsa.debian.org/debian/grub2-once
 #Vcs-Git: https://salsa.debian.org/debian/grub2-once.git
-Rules-Requires-Root: no
 
 Package: grub-once
 Architecture: any
