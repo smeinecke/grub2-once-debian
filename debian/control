@@ -2,7 +2,6 @@ Source: grub-once
 Section: admin
 Priority: optional
 Maintainer: Stefan Meinecke <meinecke@greensec.de>
-Build-Depends: debhelper-compat (>= 10)
 Standards-Version: 4.5.1
 Homepage: https://build.opensuse.org/package/show/openSUSE:Factory/grub2
 #Vcs-Browser: https://salsa.debian.org/debian/grub2-once
