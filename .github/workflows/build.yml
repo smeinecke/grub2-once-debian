@@ -24,10 +24,10 @@ jobs:
         env:
           DEB_BUILD_OPTIONS: noautodbgsym
         with:
-          docker-image: "debian:{{ $os-version }}-slim"
+          docker-image: "debian:${{ matrix.os-version }}-slim"
           buildpackage-opts: --build=binary --no-sign
       - name: Upload deb files
         uses: actions/upload-artifact@v3
         with:
-          name: packages-{{ $os-version }}
+          name: "packages-${{ matrix.os-version }}"
           path: ./*.deb
