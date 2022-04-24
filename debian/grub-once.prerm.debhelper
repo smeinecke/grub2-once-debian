@@ -1,6 +1,4 @@
-#!/bin/sh
-set -e
-# Automatically added by dh_installsystemd/13.3.4
+# Automatically added by dh_systemd_start/12.10ubuntu1
 if [ -d /run/systemd/system ] && [ "$1" = remove ]; then
 	deb-systemd-invoke stop 'grub-once.service' >/dev/null || true
 fi
