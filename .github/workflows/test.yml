@@ -1,0 +1,31 @@
+name: QEMU integration test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  qemu-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            qemu-system-x86 grub-pc-bin grub2-common busybox-static \
+            e2fsprogs fdisk cpio perl zstd xz-utils
+
+      - name: Run integration test
+        run: ./test/run-qemu-test.sh
+
+      - name: Upload console log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-console-log
+          path: console.log
+          if-no-files-found: ignore
+          retention-days: 7
