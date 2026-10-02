@@ -9,7 +9,7 @@ Homepage: https://build.opensuse.org/package/show/openSUSE:Factory/grub2
 #Vcs-Git: https://salsa.debian.org/debian/grub2-once.git
 
 Package: grub-once
-Architecture: any
+Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, perl, grub2-common
 Description: Set the default boot entry for the next boot only.
  Tool which reads all active bootloader entries from grub and

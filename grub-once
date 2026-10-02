@@ -32,6 +32,24 @@ sub sh_test($) {
   return $ret;
 }
 
+sub expand_vars() {
+    while ( m'(?:[^\\])(\$(?:{([^}]+?)}|([A-Za-z0-9_]+)))' ) {
+	my ($s, $k1, $k2) = ($1, $2, $3);
+	my $k = (defined($k1)) ? $k1 : $k2;
+	dPrint("# VT: '$k'\n");
+	if (exists( $E{$k})) {
+	  $s =~ s{([\$\{\}\"])}{\\$1}g;
+	  dPrint("# VB: '$_'\n");
+	  s{$s}{$E{$k}} || die;
+	  dPrint("# VR: '$_'\n");
+	} else {
+	  $s =~ s{([\$\{\}\"])}{\\$1}g;
+	  s{$s}{} || die;
+	  dPrint("# VR: '$_'\n");
+	}
+    }
+}
+
 sub read_cfg($$) {
     my ($dir, $cfg) = @_;
 
@@ -63,87 +81,96 @@ sub read_cfg($$) {
     open($fh, "<$dir$cfg") || die "cannot read $cfg in $dir: $!\n";
 
     LINE: while ( <$fh> ) {
-      s{^#.*$}{}; 	# get rid of trailing comments,
+      s{^\s*#.*$}{}; 	# get rid of comment lines,
       s{\s+$}{}; 	# trailing whitespace
       s{\s*;$}{};   	# including semicolons
       next if (m{^\s*$});	# and empty lines.
-      s{^\s*}{ }; 	# force leading whitespace to one
 
-      dPrint(sprintf("#%d: '%s'  [%s]%04b\n", $., $_, join(",",@State), $state));
-      if ( m{^ fi$} ) {
-	$state = pop( @State);
-	$m .= "$_\n";
-	dPrint(sprintf(">FI: [%s]0b%04b\n", join(",",@State), $state));
-	next;
-      }
-      if ($state & 0b10) {	# {if,else}-*
-	if  ( m{^ elif\s+(.*?)\s*; then$} && !($state & 0b1000)) {
-	  if ($state & 0b1) {
-	    $state = 0b110;  # else-false
-	  } else {
-	    $state = 0b010 + sh_test( $1);  # if-?
-	    dPrint(sprintf("=EI: 0b%03b\n", $state));
-	    $m .= "$_\n";
-	    next;
-	  }
-	} elsif ( m{^ else$} && !($state & 0b1000)) {
-	  if (($state & 0b111) == 0b010) {  # in 'if' but neither 'else' nor 'true'
-	    $state = 0b111;  # else-true
-	  } else {
-	    $state = 0b110;  # else-false
-	  }
-	  $m .= "$_\n";
-	  dPrint(sprintf("=EL: 0b%03b\n", $state));
-	  next;
-	}
-      }
-      if ($state & 0b1) { # *-true or normal
-	dPrint("-I1: $_\n");
-      } else { # *-false
-	dPrint("-I0: $_\n");
-	if ( m{^ if (.*?)\s*; then$} ) {
-	  push( @State, $state);
-	  $state = 0b1000;
-	  $m .= "$_\n";
-	}
-	next;
-      }
+      my $line = $_;
+      dPrint(sprintf("#%d: '%s'  [%s]%04b\n", $., $line, join(",",@State), $state));
 
-      while ( m'(?:[^\\])(\$(?:{([^}]+?)}|([A-Za-z0-9_]+)))' ) {
-	my ($s, $k1, $k2) = ($1, $2, $3);
-	my $k = (defined($k1)) ? $k1 : $k2;
-	dPrint("# VT: '$k'\n");
-	if (exists( $E{$k})) {
-	  $s =~ s{([\$\{\}\"])}{\\$1}g;
-	  dPrint("# VB: '$_'\n");
-	  s{$s}{$E{$k}} || die;
-	  dPrint("# VR: '$_'\n");
+      # grub.cfg can put several statements on one line
+      # ("if a; then if b; then", "fi; fi") - split them up so the
+      # state machine below sees each statement separately
+      STMT: while ( $line =~ m{\S} ) {
+	my $stmt;
+	if ( $line =~ s{^\s*((?:if|elif)\s+.*?\s*;\s*then)\b;?\s*}{} ) {
+	  $stmt = $1;
+	} elsif ( $line =~ s{^\s*((?:[^;"']|"[^"]*"|'[^']*')*?)\s*;\s*}{} ) {
+	  $stmt = $1;
 	} else {
-	  $s =~ s{([\$\{\}\"])}{\\$1}g;
-	  s{$s}{} || die;
-	  dPrint("# VR: '$_'\n");
+	  $stmt = $line;
+	  $line = "";
 	}
-      }
+	$stmt =~ s{^\s+}{};
+	$stmt =~ s{\s+$}{};
+	next STMT if ( $stmt eq "" );
+	$_ = " " . $stmt;	# force one leading whitespace like before
 
-      if ( m{^ if (.*?)\s*; then$} ) {
-	push( @State, $state);
-	$state = 0b010 + sh_test( $1);
-	dPrint(sprintf("<IF: 0b%03b [%s]\n", $state, join (",", @State)));
-      } elsif ( m{^ (?:set\s+)?([^\s=]+?)=(.*)$} ) {
-	my ($k, $v) = ($1, $2);
-	$v =~ s{^"([^"]*)"$}{$1};
-	dPrint("# VA: '$k'='$v'\n");
-	$E{$k} = $v;
-      } elsif ( m{^ source\s+(\S+)$} ) {
-	my $f = $1;
-	$f =~ s{^"([^"]+)"$}{$1} &&
-	dPrint("# f='$f'\n");
-	if ( -r $f ) {
-	  $m .= read_cfg("", $f);
+	dPrint(sprintf("#%d: '%s'  [%s]%04b\n", $., $_, join(",",@State), $state));
+	if ( m{^ fi$} ) {
+	  $state = pop( @State) // 1;
+	  $m .= "$_\n";
+	  dPrint(sprintf(">FI: [%s]0b%04b\n", join(",",@State), $state));
+	  next STMT;
 	}
-	next;
+	if ($state & 0b10) {	# {if,else}-*
+	  if  ( m{^ elif\s+(.*?)\s*;\s*then$} && !($state & 0b1000)) {
+	    if ($state & 0b1) {
+	      $state = 0b110;  # else-false
+	    } else {
+	      expand_vars;  # expand variables like for 'if' before testing
+	      m{^ elif\s+(.*?)\s*;\s*then$} or die "cannot parse '$_'\n";
+	      $state = 0b010 + sh_test( $1);  # if-?
+	      dPrint(sprintf("=EI: 0b%03b\n", $state));
+	      $m .= "$_\n";
+	      next STMT;
+	    }
+	  } elsif ( m{^ else$} && !($state & 0b1000)) {
+	    if (($state & 0b111) == 0b010) {  # in 'if' but neither 'else' nor 'true'
+	      $state = 0b111;  # else-true
+	    } else {
+	      $state = 0b110;  # else-false
+	    }
+	    $m .= "$_\n";
+	    dPrint(sprintf("=EL: 0b%03b\n", $state));
+	    next STMT;
+	  }
+	}
+	if ($state & 0b1) { # *-true or normal
+	  dPrint("-I1: $_\n");
+	} else { # *-false
+	  dPrint("-I0: $_\n");
+	  if ( m{^ if (.*?)\s*;\s*then$} ) {
+	    push( @State, $state);
+	    $state = 0b1000;
+	    $m .= "$_\n";
+	  }
+	  next STMT;
+	}
+
+	expand_vars;
+
+	if ( m{^ if (.*?)\s*;\s*then$} ) {
+	  push( @State, $state);
+	  $state = 0b010 + sh_test( $1);
+	  dPrint(sprintf("<IF: 0b%03b [%s]\n", $state, join (",", @State)));
+	} elsif ( m{^ (?:set\s+)?([^\s=]+?)=(.*)$} ) {
+	  my ($k, $v) = ($1, $2);
+	  $v =~ s{^"([^"]*)"$}{$1};
+	  dPrint("# VA: '$k'='$v'\n");
+	  $E{$k} = $v;
+	} elsif ( m{^ source\s+(\S+)$} ) {
+	  my $f = $1;
+	  $f =~ s{^"([^"]+)"$}{$1} &&
+	  dPrint("# f='$f'\n");
+	  if ( -r $f ) {
+	    $m .= read_cfg("", $f);
+	  }
+	  next STMT;
+	}
+	$m .= "$_\n";
       }
-      $m .= "$_\n";
     }
     close ($fh);
     return ($m);
@@ -185,8 +212,8 @@ sub enable_restore_grubenv_service {
         close($fh);
     }
 
-    return 0 if (system("$systemctl --quiet is-enabled grub2-once") == 0);
-    system "$systemctl --no-reload enable grub2-once >/dev/null 2>&1";
+    return 0 if (system("$systemctl --quiet is-enabled grub-once") == 0);
+    system "$systemctl --no-reload enable grub-once >/dev/null 2>&1";
 }
 
 $id_name = "";
@@ -206,8 +233,8 @@ $grub2_editenv = "/usr/bin/grub-editenv";
 
 if ($id_name eq "--help" or $id_name eq "-h")
   {
-    print "Usage: grub2-once [--show-mapped ID | --list | ID | NAME_SUBSTRING ]\n";
-    system "$grub2_reboot \"--help\"";
+    print "Usage: grub-once [--show-mapped ID | --list | ID | NAME_SUBSTRING ]\n";
+    system($grub2_reboot, "--help");
     exit 0;
   }
 
@@ -274,7 +301,11 @@ if ($id_name =~ m!^[0-9]+$!) {
 if ($show_mapped > 0) {
     print $ret;
 } else {
-    system "$grub2_reboot \"$name\"";
+    # If the entry could not be mapped against the parsed menu, hand the
+    # raw argument to grub-reboot; it also accepts entry ids that are not
+    # visible in grub.cfg (same as the substring lookup above).
+    $name = $id_name if ($name eq "");
+    system($grub2_reboot, $name);
     enable_restore_grubenv_service;
 }
 

@@ -17,9 +17,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os-version: ["stretch", "buster", "bullseye"]    
+        os-version: ["bullseye", "bookworm", "trixie"]    
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: jtdor/build-deb-action@v1
         env:
           DEB_BUILD_OPTIONS: noautodbgsym

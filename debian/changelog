@@ -1,3 +1,21 @@
+grub-once (2.06-17.2-2) unstable; urgency=medium
+
+  * Fix systemd unit name in grub-once script: enable grub-once.service,
+    not the nonexistent grub2-once.service.
+  * Fix grub.cfg parsing: split multiple statements on one line
+    ("if a; then if b; then", "fi; fi", "cmd; fi"), which desynced the
+    parser state and dropped all boot entries with grub >= 2.12 configs.
+  * Expand variables in 'elif' conditions like for 'if', so tests use the
+    values set in grub.cfg/grubenv instead of the process environment.
+  * Ignore indented comment lines so commented-out menuentries no longer
+    produce phantom boot entries.
+  * Pass unresolvable numeric arguments through to grub-reboot instead of
+    calling it with an empty entry name.
+  * Pass the entry name to grub-reboot without invoking the shell.
+  * Mark the package as architecture independent (Architecture: all).
+
+ -- Stefan Meinecke <meinecke@greensec.de>  Fri, 02 Oct 2026 12:34:29 +0200
+
 grub-once (2.06-17.2-1) unstable; urgency=medium
 
   * Initial release

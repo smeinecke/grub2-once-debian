@@ -9,17 +9,17 @@ env:
 
 jobs:
   grub_src:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Detect new and git version
         run: |
-          echo "latest_ver=$(curl -s ${{ env.URL }}/ | grep -E -o '>grub2-([0-9]*).([0-9]*)-([0-9]*).([0-9]*)' \
-            | sed 's/^.* //;s/>grub2-//;$!d')" >> $GITHUB_ENV
+          echo "latest_ver=$(curl -s ${{ env.URL }}/ | grep -E -o 'grub2-[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.src\.rpm' \
+            | sed 's/^grub2-//;s/\.src\.rpm$//' | sort -Vu | tail -n1)" >> $GITHUB_ENV
 
           echo "git_ver=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
 
@@ -28,7 +28,14 @@ jobs:
           if [ "$(echo ${{ env.latest_ver }} | grep -E -o '([0-9]*).([0-9]*)-([0-9]*)')" != \
                "$(echo ${{ env.git_ver }} | grep -E -o '([0-9]*).([0-9]*)-([0-9]*)')" ]; then
 
-            rm -rf *
+            # Remove old upstream files, but keep files owned by this repo
+            # (dotfiles like .github and .git are excluded via -name '.*').
+            find . -mindepth 1 -maxdepth 1 \
+              -not -name '.*' \
+              -not -name 'debian' \
+              -not -name 'grub-once' \
+              -not -name 'README.md' \
+              -exec rm -rf {} +
             curl -L -O ${{ env.URL }}/grub2-${{ env.latest_ver }}.src.rpm
             rpm2cpio grub2-${{ env.latest_ver }}.src.rpm | cpio -idv
             rm grub2-${{ env.latest_ver }}.src.rpm

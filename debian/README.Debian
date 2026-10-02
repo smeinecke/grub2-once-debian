@@ -1,6 +1,21 @@
-grub2-once for Debian
+grub-once for Debian
 --------------------
 
-<possible notes regarding this package - if none, delete this file>
+grub-once reads /boot/grub/grub.cfg and sets the boot entry that is
+used for the next boot only (via grub-reboot / the next_entry variable
+in /boot/grub/grubenv).
 
- -- root <root@unknown>  Sun, 16 Jan 2022 17:11:56 +0100
+Usage:
+
+  grub-once --list            list all boot entries
+  grub-once --enum            list entries with their grub id
+  grub-once ID                boot entry with number ID once
+  grub-once NAME_SUBSTRING    boot the first entry matching the substring
+
+The accompanying grub-once.service removes next_entry again after the
+boot if GRUB itself could not update the environment block (e.g. when
+/boot is on LVM, mdraid or btrfs), so the selection really applies to
+one boot only. For this to work, GRUB_DEFAULT in /etc/default/grub
+must be "saved".
+
+ -- Stefan Meinecke <meinecke@greensec.de>  Fri, 02 Oct 2026 12:40:00 +0200
