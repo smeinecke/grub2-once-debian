@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os-version: ["bullseye", "bookworm", "trixie"]    
+        os-version: ["bookworm", "trixie", "forky"]    
     steps:
       - uses: actions/checkout@v4
       - uses: jtdor/build-deb-action@v1

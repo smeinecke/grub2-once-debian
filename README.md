@@ -11,9 +11,10 @@ initramfs containing the script and the grub tools — boots it, runs
 `grub-once` inside the guest, reboots and asserts on the serial console
 that the selected entry booted exactly once and the default was restored.
 
-Requirements: `qemu-system-x86_64`, `grub-pc-bin`, `grub2-common`,
-`busybox-static`, `e2fsprogs`, `fdisk`, `cpio`, `perl`. KVM is used when
-available; otherwise it falls back to TCG emulation.
+Requirements: `qemu-system-x86_64`, `grub-efi-amd64-bin`, `grub2-common`,
+`ovmf`, `busybox-static`, `dosfstools`, `mtools`, `fdisk`, `cpio`,
+`perl`. KVM is used when available; otherwise it falls back to TCG
+emulation.
 
     ./test/run-qemu-test.sh
 

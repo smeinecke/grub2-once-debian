@@ -15,8 +15,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            qemu-system-x86 grub-pc-bin grub2-common busybox-static \
-            e2fsprogs fdisk cpio perl zstd xz-utils
+            qemu-system-x86 grub-efi-amd64-bin grub2-common ovmf \
+            busybox-static dosfstools mtools fdisk cpio perl zstd xz-utils
 
       - name: Run integration test
         run: ./test/run-qemu-test.sh

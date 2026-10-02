@@ -7,9 +7,9 @@
 #   * `grub-once 1` boots the oneshot entry exactly once
 #   * the following boot falls back to the default entry
 #
-# Requirements: qemu-system-x86_64, grub-pc-bin (grub-mkimage,
-# grub-bios-setup), grub2-common (grub-editenv), busybox-static,
-# e2fsprogs (mkfs.ext2), fdisk (sfdisk), cpio, perl.
+# Requirements: qemu-system-x86_64, grub-efi-amd64-bin (grub-mkimage
+# + x86_64-efi modules), ovmf, grub2-common (grub-editenv),
+# busybox-static, dosfstools (mkfs.vfat), mtools, fdisk (sfdisk), cpio, perl.
 
 set -euo pipefail
 
@@ -22,12 +22,25 @@ log()  { printf '==> %s\n' "$*"; }
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null || fail "missing required tool: $1"; }
 
-for t in qemu-system-x86_64 grub-mkimage grub-editenv sfdisk mkfs.ext2 \
-         cpio dpkg-deb; do need "$t"; done
+for t in qemu-system-x86_64 grub-mkimage grub-editenv sfdisk mkfs.vfat \
+         mcopy cpio dpkg-deb; do need "$t"; done
 need /usr/bin/busybox
+[ -d /usr/lib/grub/x86_64-efi ] || fail "x86_64-efi grub modules missing (install grub-efi-amd64-bin)"
 
-BIOS_SETUP="$(command -v grub-bios-setup || echo /usr/lib/grub/i386-pc/grub-bios-setup)"
-[ -x "$BIOS_SETUP" ] || fail "grub-bios-setup not found (install grub-pc-bin)"
+OVMF=
+for f in /usr/share/qemu/OVMF.fd /usr/share/OVMF/OVMF_CODE_4M.fd \
+         /usr/share/OVMF/OVMF_CODE.fd /usr/share/edk2/ovmf/OVMF_CODE.fd; do
+    [ -r "$f" ] && OVMF="$f" && break
+done
+if [ -z "$OVMF" ]; then
+    log "OVMF not installed; downloading package"
+    (cd "$WORK" && apt-get download ovmf >/dev/null 2>&1) || true
+    deb="$(echo "$WORK"/ovmf_*.deb 2>/dev/null)"
+    [ -f "$deb" ] && dpkg-deb -x "$deb" "$WORK/ovmf"
+    OVMF="$(echo "$WORK"/ovmf/usr/share/OVMF/OVMF_CODE*.fd "$WORK"/ovmf/usr/share/ovmf/OVMF*.fd 2>/dev/null | awk '{print $1}')"
+fi
+[ -r "$OVMF" ] || fail "no OVMF firmware found (install ovmf)"
+log "firmware: $OVMF"
 
 # ---------------------------------------------------------------- kernel
 KVER="${KVER:-$(uname -r)}"
@@ -86,7 +99,7 @@ install -D -m755 /lib64/ld-linux-x86-64.so.2 "$IR/lib64/ld-linux-x86-64.so.2"
 # kernel modules for the drivers we rely on (skip builtins)
 modlist() {
     local m
-    for m in ext2 virtio_blk virtio_pci sd_mod ata_piix; do
+    for m in vfat nls_cp437 nls_iso8859-1 virtio_blk virtio_pci sd_mod ata_piix; do
         modprobe --show-depends "$m" 2>/dev/null |
             awk '/^insmod/ { print $2 }'
     done | awk '!seen[$0]++'
@@ -107,34 +120,30 @@ done < <(modlist)
 log "initramfs: $(du -h "$WORK/initrd.img" | cut -f1)"
 
 # ------------------------------------------------------------ disk image
-# partition 1 is a dedicated /boot partition: its fs root holds
-# grub/, vmlinuz and initrd.img — mounted at /boot in the guest
+# GPT with a single EFI system partition (FAT32) that doubles as /boot:
+# its fs root holds grub/, vmlinuz, initrd.img and EFI/BOOT/BOOTX64.EFI —
+# mounted at /boot in the guest. No boot-sector embedding needed.
 ST="$WORK/stage"
-mkdir -p "$ST/grub"
+mkdir -p "$ST/grub" "$ST/EFI/BOOT"
 cp "$VMLINUZ"                    "$ST/vmlinuz"
 cp "$WORK/initrd.img"            "$ST/initrd.img"
 cp "$ROOT/test/grub.cfg"         "$ST/grub/grub.cfg"
 grub-editenv "$ST/grub/grubenv" create
-# GRUB loads modules (linux, test, serial, ...) from $prefix/i386-pc —
+# GRUB loads modules (linux, test, serial, ...) from $prefix/x86_64-efi —
 # same layout as grub-install produces
-cp -a /usr/lib/grub/i386-pc      "$ST/grub/"
+cp -a /usr/lib/grub/x86_64-efi   "$ST/grub/"
+
+# self-contained grub image for removable-media boot
+grub-mkimage -O x86_64-efi -o "$ST/EFI/BOOT/BOOTX64.EFI" -p '(hd0,gpt1)/grub' \
+    part_gpt fat normal linux configfile search serial
 
 truncate -s 60M "$WORK/part1.img"
-mkfs.ext2 -q -d "$ST" "$WORK/part1.img"
+mkfs.vfat "$WORK/part1.img" >/dev/null
+mcopy -i "$WORK/part1.img" -s "$ST"/* ::
 
 truncate -s 64M "$WORK/disk.img"
-printf 'start=2048, type=83, bootable\n' | sfdisk -q "$WORK/disk.img"
+printf 'label: gpt\nstart=2048, type=U\n' | sfdisk -q "$WORK/disk.img"
 dd if="$WORK/part1.img" of="$WORK/disk.img" bs=512 seek=2048 conv=notrunc status=none
-
-# embed GRUB in the post-MBR gap (no loop device needed)
-grub-mkimage -O i386-pc -o "$WORK/core.img" -p '(hd0,msdos1)/grub' \
-    biosdisk part_msdos ext2 normal
-mkdir "$WORK/embed"
-cp /usr/lib/grub/i386-pc/boot.img "$WORK/embed/boot.img"
-cp "$WORK/core.img"               "$WORK/embed/core.img"
-printf '(hd0) %s\n' "$WORK/disk.img" > "$WORK/device.map"
-"$BIOS_SETUP" -m "$WORK/device.map" -b boot.img -c core.img \
-    -d "$WORK/embed" --skip-fs-probe '(hd0)'
 
 # -------------------------------------------------------------------- run
 ACCEL=tcg; [ -w /dev/kvm ] && ACCEL=kvm
@@ -144,6 +153,7 @@ TIMEOUT="$(command -v timeout >/dev/null && echo timeout || echo /usr/bin/timeou
 log "booting image under QEMU ($ACCEL)"
 "$TIMEOUT" 240 qemu-system-x86_64 \
     -machine pc -accel "$ACCEL" -m 512 -smp 1 -net none \
+    -bios "$OVMF" \
     -drive file="$WORK/disk.img",format=raw,if=virtio \
     -display none -serial file:"$WORK/console.log" \
     || rc=$?
