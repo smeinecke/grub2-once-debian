@@ -1,0 +1,284 @@
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: grub2/btrfs: Add ability to boot from subvolumes
+
+This patch adds the ability to specify a different root on a btrfs
+filesystem too boot from other than the default one.
+
+btrfs-list-snapshots <dev> will list the subvolumes available on the
+filesystem.
+
+set btrfs_subvol=<path> and set btrfs_subvolid=<subvolid> will specify
+which subvolume to use and any pathnames provided with either of those
+variables set will start using that root. If the subvolume or subvolume id
+doesn't exist, then an error case will result.
+
+It is possible to boot into a separate GRUB instance by exporting the
+variable and loading the config file from the subvolume.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+
+V1:
+  * Use overflow checking primitives where the arithmetic expression for
+    buffer allocations may include unvalidated data
+
+V2:
+  * Fix gcc-12 error: the comparison will always evaluate as 'true' for the
+    address of 'label' will never be NULL [-Werror=address]
+
+v3:
+  * Check find_pathname() in grub_cmd_btrfs_list_subvols() and return an error
+    on failure
+---
+
+ grub-core/fs/btrfs.c |  561 +++++++++++++++++++++++++++++++++++++++++++++++++--
+ include/grub/btrfs.h |    1 
+ 2 files changed, 544 insertions(+), 18 deletions(-)
+
+--- a/grub-core/fs/btrfs.c
++++ b/grub-core/fs/btrfs.c
+@@ -126,6 +126,7 @@
+   grub_uint64_t exttree;
+   grub_size_t extsize;
+   struct grub_btrfs_extent_data *extent;
++  grub_uint64_t fs_tree;
+ };
+ 
+ struct grub_btrfs_chunk_item
+@@ -249,10 +250,14 @@
+ 
+ #define GRUB_BTRFS_OBJECT_ID_CHUNK 0x100
+ 
++#define GRUB_BTRFS_ROOT_TREE_OBJECTID 1ULL
+ #define GRUB_BTRFS_FS_TREE_OBJECTID 5ULL
+ #define GRUB_BTRFS_ROOT_REF_KEY     156
+ #define GRUB_BTRFS_ROOT_ITEM_KEY     132
+ 
++static grub_uint64_t btrfs_default_subvolid = 0;
++static char *btrfs_default_subvol = NULL;
++
+ static grub_disk_addr_t superblock_sectors[] = { 64 * 2, 64 * 1024 * 2,
+   256 * 1048576 * 2, 1048576ULL * 1048576ULL * 2
+ };
+@@ -1276,6 +1281,62 @@
+   return GRUB_ERR_NONE;
+ }
+ 
++static grub_err_t
++get_fs_root(struct grub_btrfs_data *data, grub_uint64_t tree,
++            grub_uint64_t objectid, grub_uint64_t offset,
++            grub_uint64_t *fs_root, grub_uint64_t *flags);
++
++static grub_err_t
++lookup_root_by_id(struct grub_btrfs_data *data, grub_uint64_t id)
++{
++  grub_err_t err;
++  grub_uint64_t tree;
++
++  err = get_fs_root (data, data->sblock.root_tree, id, -1, &tree, NULL);
++  if (!err)
++    data->fs_tree = tree;
++  return err;
++}
++
++static grub_err_t
++find_path (struct grub_btrfs_data *data,
++	   const char *path, struct grub_btrfs_key *key,
++	   grub_uint64_t *tree, grub_uint8_t *type);
++
++static grub_err_t
++lookup_root_by_name(struct grub_btrfs_data *data, const char *path)
++{
++  grub_err_t err;
++  grub_uint64_t tree = 0;
++  grub_uint8_t type;
++  struct grub_btrfs_key key;
++
++  err = find_path (data, path, &key, &tree, &type);
++  if (err)
++      return grub_error(GRUB_ERR_FILE_NOT_FOUND, "couldn't locate %s\n", path);
++
++  if (key.object_id != grub_cpu_to_le64_compile_time (GRUB_BTRFS_OBJECT_ID_CHUNK) || tree == 0)
++    return grub_error(GRUB_ERR_BAD_FILE_TYPE, "%s: not a subvolume\n", path);
++
++  data->fs_tree = tree;
++  return GRUB_ERR_NONE;
++}
++
++static grub_err_t
++btrfs_handle_subvol(struct grub_btrfs_data *data __attribute__ ((unused)))
++{
++  if (btrfs_default_subvol)
++    return lookup_root_by_name(data, btrfs_default_subvol);
++
++  if (btrfs_default_subvolid)
++    return lookup_root_by_id(data, btrfs_default_subvolid);
++
++  data->fs_tree = 0;
++
++  return GRUB_ERR_NONE;
++}
++
++
+ static struct grub_btrfs_data *
+ grub_btrfs_mount (grub_device_t dev)
+ {
+@@ -1311,6 +1372,13 @@
+   data->devices_attached[0].dev = dev;
+   data->devices_attached[0].id = data->sblock.this_device.device_id;
+ 
++  err = btrfs_handle_subvol (data);
++  if (err)
++    {
++      grub_free (data);
++      return NULL;
++    }
++
+   return data;
+ }
+ 
+@@ -1927,14 +1995,26 @@
+   unsigned symlinks_max = 32;
+   grub_size_t sz;
+ 
+-  err = get_root (data, key, tree, type);
+-  if (err)
+-    return err;
+-
+   origpath = grub_strdup (path);
+   if (!origpath)
+     return grub_errno;
+ 
++  if (data->fs_tree)
++    {
++      *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
++      *tree = data->fs_tree;
++      /* This is a tree root, so everything starts at objectid 256 */
++      key->object_id = grub_cpu_to_le64_compile_time (GRUB_BTRFS_OBJECT_ID_CHUNK);
++      key->type = GRUB_BTRFS_ITEM_TYPE_DIR_ITEM;
++      key->offset = 0;
++    }
++  else
++    {
++      err = get_root (data, key, tree, type);
++      if (err)
++	return err;
++    }
++
+   while (1)
+     {
+       while (path[0] == '/')
+@@ -2121,13 +2201,25 @@
+ 	  path = path_alloc = tmp;
+ 	  if (path[0] == '/')
+ 	    {
+-	      err = get_root (data, key, tree, type);
+-	      if (err)
++	      if (data->fs_tree)
+ 		{
+-		  grub_free (direl);
+-		  grub_free (path_alloc);
+-		  grub_free (origpath);
+-		  return err;
++		  *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
++		  *tree = data->fs_tree;
++		  /* This is a tree root, so everything starts at objectid 256 */
++		  key->object_id = grub_cpu_to_le64_compile_time (GRUB_BTRFS_OBJECT_ID_CHUNK);
++		  key->type = GRUB_BTRFS_ITEM_TYPE_DIR_ITEM;
++		  key->offset = 0;
++		}
++	      else
++		{
++		  err = get_root (data, key, tree, type);
++		  if (err)
++		    {
++		      grub_free (direl);
++		      grub_free (path_alloc);
++		      grub_free (origpath);
++		      return err;
++		    }
+ 		}
+ 	    }
+ 	  continue;
+@@ -3117,6 +3209,61 @@
+ static grub_extcmd_t cmd_list_subvols;
+ static grub_extcmd_t cmd_get_default_subvol;
+ 
++static char *
++subvolid_set_env (struct grub_env_var *var __attribute__ ((unused)),
++                  const char *val)
++{
++  unsigned long long result = 0;
++
++  grub_errno = GRUB_ERR_NONE;
++  if (*val)
++    {
++      result = grub_strtoull(val, NULL, 10);
++      if (grub_errno)
++        return NULL;
++    }
++
++  grub_free (btrfs_default_subvol);
++  btrfs_default_subvol = NULL;
++  btrfs_default_subvolid = result;
++  return grub_strdup(val);
++}
++
++static const char *
++subvolid_get_env (struct grub_env_var *var __attribute__ ((unused)),
++                  const char *val __attribute__ ((unused)))
++{
++  if (btrfs_default_subvol)
++    return grub_xasprintf("subvol:%s", btrfs_default_subvol);
++  else if (btrfs_default_subvolid)
++    return grub_xasprintf("%"PRIuGRUB_UINT64_T, btrfs_default_subvolid);
++  else
++    return "";
++}
++
++static char *
++subvol_set_env (struct grub_env_var *var __attribute__ ((unused)),
++                const char *val)
++{
++  grub_free (btrfs_default_subvol);
++  btrfs_default_subvol = grub_strdup (val);
++  btrfs_default_subvolid = 0;
++  return grub_strdup(val);
++}
++
++static const char *
++subvol_get_env (struct grub_env_var *var __attribute__ ((unused)),
++                const char *val __attribute__ ((unused)))
++{
++  if (btrfs_default_subvol)
++    return btrfs_default_subvol;
++  else if (btrfs_default_subvolid)
++    return grub_xasprintf("subvolid:%" PRIuGRUB_UINT64_T,
++                          btrfs_default_subvolid);
++  else
++    return "";
++}
++
+ GRUB_MOD_INIT (btrfs)
+ {
+   grub_btrfs_fs.mod = mod;
+@@ -3135,12 +3282,20 @@
+ 					 "[-p|-n] [-o var] DEVICE",
+ 					 "Print default BtrFS subvolume on "
+ 					 "DEVICE.", opt_default_subvol);
++  grub_register_variable_hook ("btrfs_subvol", subvol_get_env,
++                               subvol_set_env);
++  grub_register_variable_hook ("btrfs_subvolid", subvolid_get_env,
++                               subvolid_set_env);
+ }
+ 
+ GRUB_MOD_FINI (btrfs)
+ {
++  grub_register_variable_hook ("btrfs_subvol", NULL, NULL);
++  grub_register_variable_hook ("btrfs_subvolid", NULL, NULL);
+   grub_fs_unregister (&grub_btrfs_fs);
+   grub_unregister_command (cmd_info);
+   grub_unregister_extcmd (cmd_list_subvols);
+   grub_unregister_extcmd (cmd_get_default_subvol);
+ }
++
++// vim: si et sw=2:

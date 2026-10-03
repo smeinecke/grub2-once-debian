@@ -1,0 +1,161 @@
+From 977f8c63d9d85fd101e989310ac0ba011f252df1 Mon Sep 17 00:00:00 2001
+From: Michael Chang <mchang@suse.com>
+Date: Mon, 20 Nov 2023 09:25:53 +0800
+Subject: [PATCH 2/2] Key revocation on out of bound file access
+
+After successful disk unlocking, grub now takes on the responsibility of
+safeguarding passwords or TPM keys exclusively within authenticated
+cryptodisk files. Any attempt to access boot-related files outside this
+trust realm triggers immediate key revocation, preventing potential
+compromise by out of bound access.
+
+This patch strengthens security measures by restricting grub's access to
+system boot files, except for essential internal processes like memdisk
+and procfs, ensuring key protection against potential breaches due to
+inadvertent customizations in grub.cfg.
+
+v2: use cryptocheck command
+The grub_disk_is_crypto() function duplicates the purpose of the
+cryptocheck command and is therefore removed. A new check function now
+calls cryptocheck directly to improve code reuse.
+
+Signed-Off-by: Michael Chang <mchang@suse.com>
+---
+ grub-core/commands/crypttab.c | 76 +++++++++++++++++++++++++++++++++++
+ grub-core/disk/diskfilter.c   |  1 +
+ include/grub/file.h           |  1 +
+ 3 files changed, 78 insertions(+)
+
+diff --git a/grub-core/commands/crypttab.c b/grub-core/commands/crypttab.c
+index 9397bede9e..f104154e23 100644
+--- a/grub-core/commands/crypttab.c
++++ b/grub-core/commands/crypttab.c
+@@ -6,11 +6,47 @@
+ #include <grub/mm.h>
+ #include <grub/list.h>
+ #include <grub/crypttab.h>
++#include <grub/file.h>
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ grub_crypto_key_list_t *cryptokey_lst;
+ 
++static int
++is_unencrypted_disk (grub_disk_t disk)
++{
++  grub_command_t cmd;
++  char *disk_str;
++  int disk_str_len;
++  int res;
++
++  if (disk->dev->id == GRUB_DISK_DEVICE_CRYPTODISK_ID)
++    return 0; /* This is (crypto*) disk */
++
++  if (disk->dev->id == GRUB_DISK_DEVICE_DISKFILTER_ID)
++    {
++      char opt[] = "--quiet";
++      char *args[2];
++
++      cmd = grub_command_find ("cryptocheck");
++      if (!cmd) /* No diskfilter module loaded for some reason */
++        return 1;
++
++      disk_str_len = grub_strlen (disk->name) + 2 + 1;
++      disk_str = grub_malloc (disk_str_len);
++      if (!disk_str) /* Something is wrong, better report as unencrypted */
++        return 1;
++
++      grub_snprintf (disk_str, disk_str_len, "(%s)", disk->name);
++      args[0] = opt;
++      args[1] = disk_str;
++      res = cmd->func (cmd, 2, args);
++      grub_free (disk_str);
++      return (res != GRUB_ERR_NONE); /* GRUB_ERR_NONE for encrypted */
++    }
++  return 1;
++}
++
+ grub_err_t
+ grub_cryptokey_add_or_update (const char *uuid, const char *key, grub_size_t key_len, const char *path, int is_tpmkey)
+ {
+@@ -89,6 +125,44 @@ grub_cryptokey_tpmkey_discard (void)
+     grub_cryptokey_discard();
+ }
+ 
++static grub_file_t
++grub_distrust_open (grub_file_t io,
++		enum grub_file_type type __attribute__ ((unused)))
++{
++  grub_disk_t disk = io->device->disk;
++
++  if (io->device->disk &&
++      (io->device->disk->dev->id == GRUB_DISK_DEVICE_MEMDISK_ID
++       || io->device->disk->dev->id == GRUB_DISK_DEVICE_PROCFS_ID))
++    return io;
++
++  /* Ensure second stage files is in a protected location or grub won't hand
++   * over the key and discards it */
++  switch (type & GRUB_FILE_TYPE_MASK)
++    {
++      case GRUB_FILE_TYPE_ACPI_TABLE:
++      case GRUB_FILE_TYPE_CONFIG:
++      case GRUB_FILE_TYPE_DEVICE_TREE_IMAGE:
++      case GRUB_FILE_TYPE_FONT:
++      case GRUB_FILE_TYPE_GRUB_MODULE:
++      case GRUB_FILE_TYPE_GRUB_MODULE_LIST:
++      case GRUB_FILE_TYPE_LINUX_KERNEL:
++      case GRUB_FILE_TYPE_LINUX_INITRD:
++      case GRUB_FILE_TYPE_LOADENV:
++      case GRUB_FILE_TYPE_THEME:
++	if (!disk || is_unencrypted_disk (disk))
++	  {
++	    grub_cryptokey_discard ();
++	    grub_errno = GRUB_ERR_NONE;
++	  }
++	break;
++      default:
++	break;
++    }
++
++  return io;
++}
++
+ static grub_err_t
+ grub_cmd_crypttab_entry (grub_command_t cmd __attribute__ ((unused)),
+ 	       int argc, char **argv)
+@@ -121,6 +195,8 @@ GRUB_MOD_INIT(crypttab)
+ {
+   cmd = grub_register_command ("crypttab_entry", grub_cmd_crypttab_entry,
+ 			       N_("VOLUME-NAME ENCRYPTED-DEVICE KEY-FILE") , N_("No description"));
++  grub_file_filter_register (GRUB_FILE_FILTER_DISTRUST, grub_distrust_open);
++  grub_dl_set_persistent (mod);
+ }
+ 
+ GRUB_MOD_FINI(crypttab)
+diff --git a/grub-core/disk/diskfilter.c b/grub-core/disk/diskfilter.c
+index b1d5d464f5..e23215486d 100644
+--- a/grub-core/disk/diskfilter.c
++++ b/grub-core/disk/diskfilter.c
+@@ -590,6 +590,7 @@ grub_diskfilter_open (const char *name, grub_disk_t disk)
+ 
+   disk->total_sectors = lv->size;
+   disk->max_agglomerate = GRUB_DISK_MAX_MAX_AGGLOMERATE;
++
+   return 0;
+ }
+ 
+diff --git a/include/grub/file.h b/include/grub/file.h
+index c463e4f992..804d512231 100644
+--- a/include/grub/file.h
++++ b/include/grub/file.h
+@@ -185,6 +185,7 @@ extern grub_disk_read_hook_t EXPORT_VAR(grub_file_progress_hook);
+ /* Filters with lower ID are executed first.  */
+ typedef enum grub_file_filter_id
+   {
++    GRUB_FILE_FILTER_DISTRUST,
+     GRUB_FILE_FILTER_VERIFY,
+     GRUB_FILE_FILTER_GZIO,
+     GRUB_FILE_FILTER_XZIO,
+-- 
+2.49.0
+

@@ -1,0 +1,227 @@
+v1:
+As long as VERSION in /etc/os-release has been commented out for rolling
+release, we can replace openSUSE Tumbleweed specific handling for grub
+distributor with a generic one.
+
+v2:
+Use /usr/lib/os-release as fallback to /etc/os-release
+
+--- a/grub-core/osdep/unix/config.c
++++ b/grub-core/osdep/unix/config.c
+@@ -61,6 +61,131 @@
+   return LOCALEDIR;
+ }
+ 
++#ifdef __linux__
++static char *
++os_release_get_val (const char *buf, const char *key)
++{
++  const char *ptr = buf;
++  char *ret;
++
++  while (*ptr && grub_isspace(*ptr))
++    ptr++;
++
++  if (*ptr == '#')
++    return NULL;
++
++  if (grub_strncmp (ptr, key, grub_strlen (key)) != 0)
++    return NULL;
++
++  ptr += grub_strlen (key);
++  if (*ptr++ != '=' || *ptr == '\0')
++    return NULL;
++
++  if (*ptr == '"' || *ptr == '\'')
++    {
++      char c = *ptr;
++      int i = 0;
++      char *tmp, *ptmp;
++
++      if (*++ptr == '\0')
++	return NULL;
++
++      tmp = grub_strdup (ptr);
++      if ((ptmp = grub_strrchr (tmp, c)))
++	*ptmp = '\0';
++
++      ret = malloc (grub_strlen (tmp) + 1);
++      ptmp = tmp;
++      while (*ptmp)
++	{
++	  if (*ptmp != '\\' || *(ptmp + 1) != c)
++	    ret[i++] = *ptmp;
++	  ++ptmp;
++	}
++
++      grub_free (tmp);
++      ret[i] = '\0';
++    }
++  else
++    {
++      char *pret;
++
++      ret = grub_strdup (ptr);
++      if ((pret = grub_strchr (ret, ' ')))
++	*pret = '\0';
++    }
++
++  return ret;
++}
++
++static char*
++grub_util_default_distributor (void)
++{
++  char *cfgfile;
++  char buf[1024];
++  FILE *fp = NULL;
++  char *os_name = NULL;
++  char *os_version = NULL;
++
++  cfgfile = grub_util_path_concat (2, GRUB_SYSCONFDIR, "os-release");
++  if (!grub_util_is_regular (cfgfile))
++    {
++      grub_free (cfgfile);
++      cfgfile = grub_util_path_concat (2, "/usr/lib", "os-release");
++      if (!grub_util_is_regular (cfgfile))
++        {
++          grub_free (cfgfile);
++          return NULL;
++        }
++    }
++
++  fp = grub_util_fopen (cfgfile, "r");
++
++  if (!fp)
++    {
++      grub_util_warn (_("cannot open configuration file `%s': %s"),
++		      cfgfile, strerror (errno));
++      grub_free (cfgfile);
++      return NULL;
++    }
++
++  grub_free (cfgfile);
++
++  while (fgets (buf, sizeof (buf), fp))
++    {
++      if (buf[grub_strlen(buf) - 1] == '\n')
++	buf[grub_strlen(buf) - 1] = '\0';
++
++      if (!os_name
++	  && (os_name = os_release_get_val (buf, "NAME")))
++	continue;
++      if (!os_version
++	  && (os_version = os_release_get_val (buf, "VERSION")))
++	continue;
++      if (os_name && os_version)
++	break;
++    }
++
++  fclose (fp);
++
++  if (os_name && os_version)
++    {
++      char *os_name_version;
++
++      os_name_version = grub_xasprintf ("%s %s", os_name, os_version);
++
++      grub_free (os_name);
++      grub_free (os_version);
++
++      return os_name_version;
++    }
++
++  grub_free (os_version);
++
++  return os_name;
++}
++#endif
++
+ void
+ grub_util_load_config (struct grub_util_config *cfg)
+ {
+@@ -125,7 +250,32 @@
+       waitpid (pid, NULL, 0);
+     }
+   if (f)
+-    return;
++    {
++#ifdef __linux__
++      if (!cfg->grub_distributor || cfg->grub_distributor[0] == '\0')
++	{
++	  if (cfg->grub_distributor)
++	    grub_free (cfg->grub_distributor);
++	  cfg->grub_distributor = grub_util_default_distributor ();
++	  if (cfg->grub_distributor)
++	    {
++	      /*
++	       * For bootloader-id derived from the default distributor, use
++	       * the first word in all lower case. It is to retain the behavior
++	       * prior to this commit. ddb8f4c1f util/grub-install:
++	       * bootloader-id, pass GRUB_DISTRIBUTOR directly.
++	       */
++	      char *s;
++
++	      for (s = cfg->grub_distributor; *s && *s != ' '; s++)
++		if (*s >= 'A' && *s <= 'Z')
++		  *s = *s - 'A' + 'a';
++	      *s = '\0';
++	    }
++	}
++#endif
++      return;
++    }
+ 
+   f = grub_util_fopen (cfgfile, "r");
+   if (f)
+@@ -136,4 +286,28 @@
+   else
+     grub_util_warn (_("cannot open configuration file `%s': %s"),
+ 		    cfgfile, strerror (errno));
++
++#ifdef __linux__
++  if (!cfg->grub_distributor || cfg->grub_distributor[0] == '\0')
++    {
++      if (cfg->grub_distributor)
++	grub_free (cfg->grub_distributor);
++      cfg->grub_distributor = grub_util_default_distributor ();
++      if (cfg->grub_distributor)
++	{
++	  /*
++	   * For bootloader-id derived from the default distributor, use
++	   * the first word in all lower case. It is to retain the behavior
++	   * prior to this commit. ddb8f4c1f util/grub-install:
++	   * bootloader-id, pass GRUB_DISTRIBUTOR directly.
++	   */
++	  char *s;
++
++	  for (s = cfg->grub_distributor; *s && *s != ' '; s++)
++	    if (*s >= 'A' && *s <= 'Z')
++	      *s = *s - 'A' + 'a';
++	  *s = '\0';
++	}
++    }
++#endif
+ }
+--- a/util/grub-mkconfig.in
++++ b/util/grub-mkconfig.in
+@@ -241,6 +241,19 @@
+ if [ "x${GRUB_ADVANCED_ACCESS_LEVEL}" = "x" ] ; then GRUB_ADVANCED_ACCESS_LEVEL="0" ; fi
+ if [ "x${GRUB_RECOVERY_ACCESS_LEVEL}" = "x" ] ; then GRUB_RECOVERY_ACCESS_LEVEL="0" ; fi
+ 
++if [ x"${GRUB_DISTRIBUTOR}" = x ] ; then
++    for i in "${sysconfdir}/os-release" "/usr/lib/os-release" ; do
++      if [ -f "$i" ] ; then
++        . "$i"
++        break
++      fi
++    done
++    if [ x"${NAME}" != x ] && [ x"${VERSION}" != x ] ; then
++      GRUB_DISTRIBUTOR="${NAME} ${VERSION}"
++    else
++      GRUB_DISTRIBUTOR="${NAME}"
++    fi
++fi
+ 
+ # These are defined in this script, export them here so that user can
+ # override them.

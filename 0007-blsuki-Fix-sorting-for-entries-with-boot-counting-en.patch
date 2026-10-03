@@ -1,0 +1,86 @@
+From 5cf5c938a1ed621e5dcd91277ad856552434df98 Mon Sep 17 00:00:00 2001
+From: Danilo Spinella <danilo.spinella@suse.com>
+Date: Thu, 19 Mar 2026 12:17:12 +0100
+Subject: [PATCH 7/9] blsuki: Fix sorting for entries with boot counting
+ enabled
+
+Sort entries with boot counting enabled (ending with +x-y.conf)
+and with 0 tries left below the rest.
+---
+ grub-core/commands/blsuki.c | 46 ++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 45 insertions(+), 1 deletion(-)
+
+diff --git a/grub-core/commands/blsuki.c b/grub-core/commands/blsuki.c
+index 2664a9fc4..8364ba9f4 100644
+--- a/grub-core/commands/blsuki.c
++++ b/grub-core/commands/blsuki.c
+@@ -251,6 +251,42 @@ blsuki_get_val (grub_blsuki_entry_t *entry, const char *keyname, int *last)
+   return ret;
+ }
+ 
++/* Return the tries left of an entry with boot counting enabled.
++   When boot counting is disabled, return -1. */
++static long
++tries_left (const char *filename)
++{
++  char *tries_left_str;
++  long ret = -1;
++  char *str = grub_strdup (filename);
++
++  if (str == NULL)
++    return -1;
++
++  /* Search for the start of the tries left, as per boot assessment */
++  tries_left_str = grub_strrchr (str, '+');
++
++  if (tries_left_str != NULL)
++    {
++      const char *end;
++      long tries;
++
++      ++tries_left_str;
++      tries = grub_strtol (tries_left_str, (const char **) &end, 10);
++
++      if (grub_errno == GRUB_ERR_NONE)
++	{
++	  if (*end == '-' || *end == '.')
++	    ret = tries;
++	}
++      else
++	grub_errno = GRUB_ERR_NONE;
++    }
++
++  grub_free (str);
++  return ret;
++}
++
+ /*
+  * Add a new grub_blsuki_entry_t struct to the entries list and sort it's
+  * position on the list.
+@@ -259,7 +295,7 @@ static grub_err_t
+ blsuki_add_entry (grub_blsuki_entry_t *entry)
+ {
+   grub_blsuki_entry_t *e, *last = NULL;
+-  int rc;
++  int rc, t1, t2;
+ 
+   if (entries == NULL)
+     {
+@@ -274,6 +310,14 @@ blsuki_add_entry (grub_blsuki_entry_t *entry)
+       if (rc == 0)
+ 	return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("duplicate file: `%s'"), entry->filename);
+ 
++      /* Entries with 0 tries left should be put below the rest */
++      t1 = tries_left (entry->filename);
++      t2 = tries_left (e->filename);
++      if (t2 == 0 && t1 != 0)
++	rc = 1;
++      else if (t2 != 0 && t1 == 0)
++	rc = -1;
++
+       if (rc > 0)
+ 	{
+ 	  grub_dprintf ("blsuki", "Add entry with id \"%s\"\n", entry->filename);
+-- 
+2.53.0
+

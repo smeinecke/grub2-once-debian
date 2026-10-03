@@ -1,0 +1,186 @@
+--- a/grub-core/fs/btrfs.c
++++ b/grub-core/fs/btrfs.c
+@@ -1335,6 +1335,7 @@
+ {
+   struct grub_btrfs_data *data;
+   grub_err_t err;
++  const char *relpath = grub_env_get ("btrfs_relative_path");
+ 
+   if (!dev->disk)
+     {
+@@ -1365,11 +1366,14 @@
+   data->devices_attached[0].dev = dev;
+   data->devices_attached[0].id = data->sblock.this_device.device_id;
+ 
+-  err = btrfs_handle_subvol (data);
+-  if (err)
++  if (relpath && (relpath[0] == '1' || relpath[0] == 'y'))
+     {
+-      grub_free (data);
+-      return NULL;
++      err = btrfs_handle_subvol (data);
++      if (err)
++      {
++        grub_free (data);
++        return NULL;
++      }
+     }
+ 
+   return data;
+@@ -1976,25 +1980,40 @@
+   grub_size_t allocated = 0;
+   struct grub_btrfs_dir_item *direl = NULL;
+   struct grub_btrfs_key key_out;
++  int follow_default;
+   const char *ctoken;
+   grub_size_t ctokenlen;
+   char *path_alloc = NULL;
+   char *origpath = NULL;
+   unsigned symlinks_max = 32;
+   grub_size_t sz;
++  const char *relpath = grub_env_get ("btrfs_relative_path");
+ 
++  follow_default = 0;
+   origpath = grub_strdup (path);
+   if (!origpath)
+     return grub_errno;
+ 
+-  if (data->fs_tree)
++  if (relpath && (relpath[0] == '1' || relpath[0] == 'y'))
+     {
+-      *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
+-      *tree = data->fs_tree;
+-      /* This is a tree root, so everything starts at objectid 256 */
+-      key->object_id = grub_cpu_to_le64_compile_time (GRUB_BTRFS_OBJECT_ID_CHUNK);
+-      key->type = GRUB_BTRFS_ITEM_TYPE_DIR_ITEM;
+-      key->offset = 0;
++      if (data->fs_tree)
++        {
++          *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
++          *tree = data->fs_tree;
++          /* This is a tree root, so everything starts at objectid 256 */
++          key->object_id = grub_cpu_to_le64_compile_time (GRUB_BTRFS_OBJECT_ID_CHUNK);
++          key->type = GRUB_BTRFS_ITEM_TYPE_DIR_ITEM;
++          key->offset = 0;
++        }
++      else
++        {
++          *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
++          *tree = data->sblock.root_tree;
++          key->object_id = data->sblock.root_dir_objectid;
++          key->type = GRUB_BTRFS_ITEM_TYPE_DIR_ITEM;
++          key->offset = 0;
++          follow_default = 1;
++        }
+     }
+   else
+     {
+@@ -2005,15 +2024,23 @@
+ 
+   while (1)
+     {
+-      while (path[0] == '/')
+-	path++;
+-      if (!path[0])
+-	break;
+-      slash = grub_strchr (path, '/');
+-      if (!slash)
+-	slash = path + grub_strlen (path);
+-      ctoken = path;
+-      ctokenlen = slash - path;
++      if (!follow_default)
++	{
++	  while (path[0] == '/')
++	    path++;
++	  if (!path[0])
++	    break;
++	  slash = grub_strchr (path, '/');
++	  if (!slash)
++	    slash = path + grub_strlen (path);
++	  ctoken = path;
++	  ctokenlen = slash - path;
++	}
++      else
++	{
++	  ctoken = "default";
++	  ctokenlen = sizeof ("default") - 1;
++	}
+ 
+       if (*type != GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY)
+ 	{
+@@ -2024,7 +2051,9 @@
+ 
+       if (ctokenlen == 1 && ctoken[0] == '.')
+ 	{
+-	  path = slash;
++	  if (!follow_default)
++	    path = slash;
++	  follow_default = 0;
+ 	  continue;
+ 	}
+       if (ctokenlen == 2 && ctoken[0] == '.' && ctoken[1] == '.')
+@@ -2055,8 +2084,9 @@
+ 	  *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
+ 	  key->object_id = key_out.offset;
+ 
+-	  path = slash;
+-
++	  if (!follow_default)
++	    path = slash;
++	  follow_default = 0;
+ 	  continue;
+ 	}
+ 
+@@ -2131,7 +2161,9 @@
+ 	  return err;
+ 	}
+ 
+-      path = slash;
++      if (!follow_default)
++	path = slash;
++      follow_default = 0;
+       if (cdirel->type == GRUB_BTRFS_DIR_ITEM_TYPE_SYMLINK)
+ 	{
+ 	  struct grub_btrfs_inode inode;
+@@ -2189,14 +2221,26 @@
+ 	  path = path_alloc = tmp;
+ 	  if (path[0] == '/')
+ 	    {
+-	      if (data->fs_tree)
++              if (relpath && (relpath[0] == '1' || relpath[0] == 'y'))
+ 		{
+-		  *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
+-		  *tree = data->fs_tree;
+-		  /* This is a tree root, so everything starts at objectid 256 */
+-		  key->object_id = grub_cpu_to_le64_compile_time (GRUB_BTRFS_OBJECT_ID_CHUNK);
+-		  key->type = GRUB_BTRFS_ITEM_TYPE_DIR_ITEM;
+-		  key->offset = 0;
++	          if (data->fs_tree)
++		    {
++		      *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
++		      *tree = data->fs_tree;
++		      /* This is a tree root, so everything starts at objectid 256 */
++		      key->object_id = grub_cpu_to_le64_compile_time (GRUB_BTRFS_OBJECT_ID_CHUNK);
++		      key->type = GRUB_BTRFS_ITEM_TYPE_DIR_ITEM;
++		      key->offset = 0;
++		    }
++		  else
++		    {
++	              *type = GRUB_BTRFS_DIR_ITEM_TYPE_DIRECTORY;
++	              *tree = data->sblock.root_tree;
++	              key->object_id = data->sblock.root_dir_objectid;
++	              key->type = GRUB_BTRFS_ITEM_TYPE_DIR_ITEM;
++	              key->offset = 0;
++	              follow_default = 1;
++		    }
+ 		}
+ 	      else
+ 		{
+@@ -2971,6 +3015,7 @@
+                                subvolid_set_env);
+   grub_env_export ("btrfs_subvol");
+   grub_env_export ("btrfs_subvolid");
++  grub_env_export ("btrfs_relative_path");
+ }
+ 
+ GRUB_MOD_FINI (btrfs)

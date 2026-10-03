@@ -1,0 +1,89 @@
+From 32e07f7b99a1dbae933f4d916b0342a82e7ccf35 Mon Sep 17 00:00:00 2001
+From: Gary Lin <glin@suse.com>
+Date: Mon, 18 Mar 2024 14:53:11 +0800
+Subject: [PATCH] key_protector: implement the blocklist
+
+Some architectures may need to do the additional check to avoid leaking
+the recovered key. This commit adds an additional check for the EFI
+system to detect the deprecated SystemdOptions variable. Once the
+variable is spotted, key_protector just returns without the further
+action for the key recovery.
+
+Signed-off-by: Gary Lin <glin@suse.com>
+---
+ grub-core/disk/key_protector.c | 31 +++++++++++++++++++++++++++++++
+ include/grub/efi/api.h         |  5 +++++
+ 2 files changed, 36 insertions(+)
+
+--- a/grub-core/disk/key_protector.c
++++ b/grub-core/disk/key_protector.c
+@@ -25,6 +25,10 @@
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
++#ifdef GRUB_MACHINE_EFI
++#include <grub/efi/efi.h>
++#endif
++
+ struct grub_key_protector *grub_key_protectors = NULL;
+ 
+ grub_err_t
+@@ -53,11 +57,34 @@
+   return GRUB_ERR_NONE;
+ }
+ 
++static grub_err_t
++grub_key_protector_check_blocklist (void)
++{
++#ifdef GRUB_MACHINE_EFI
++  static grub_guid_t systemd_guid = GRUB_EFI_SYSTEMD_GUID;
++  grub_efi_status_t status;
++  grub_size_t size = 0;
++  grub_uint8_t *systemdoptions = NULL;
++
++  /* SystemdOptions may contain malicious kernel command lines. */
++  status = grub_efi_get_variable ("SystemdOptions", &systemd_guid,
++				  &size, (void **) &systemdoptions);
++  if (status != GRUB_EFI_NOT_FOUND)
++  {
++    grub_free (systemdoptions);
++    return grub_error (GRUB_ERR_ACCESS_DENIED, N_("SystemdOptions detected"));
++  }
++#endif
++
++  return GRUB_ERR_NONE;
++}
++
+ grub_err_t
+ grub_key_protector_recover_key (const char *protector, grub_uint8_t **key,
+ 				grub_size_t *key_size)
+ {
+   struct grub_key_protector *kp = NULL;
++  grub_err_t err;
+ 
+   if (grub_key_protectors == NULL)
+     return grub_error (GRUB_ERR_OUT_OF_RANGE, "No key protector registered");
+@@ -69,5 +96,9 @@
+   if (kp == NULL)
+     return grub_error (GRUB_ERR_OUT_OF_RANGE, "Key protector '%s' not found", protector);
+ 
++  err = grub_key_protector_check_blocklist ();
++  if (err != GRUB_ERR_NONE)
++    return err;
++
+   return kp->recover_key (key, key_size);
+ }
+--- a/include/grub/efi/api.h
++++ b/include/grub/efi/api.h
+@@ -414,6 +414,11 @@
+     { 0x99, 0x20, 0x2d, 0x3b, 0x36, 0xd7, 0x50, 0xdf } \
+   }
+ 
++#define GRUB_EFI_SYSTEMD_GUID \
++  { 0x8cf2644b, 0x4b0b, 0x428f, \
++    { 0x93, 0x87, 0x6d, 0x87, 0x60, 0x50, 0xdc, 0x67 } \
++  }
++
+ struct grub_efi_sal_system_table
+ {
+   grub_uint32_t signature;

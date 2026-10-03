@@ -1,0 +1,132 @@
+From 434b014e20ebb7930599fe30e09441af6b449fef Mon Sep 17 00:00:00 2001
+From: Michael Chang <mchang@suse.com>
+Date: Mon, 14 Apr 2025 08:52:26 +0800
+Subject: [PATCH] blscfg: read fragments in order
+
+The PCR 9 measurements of BLS entry files made by blscfg module are
+performed in "readdir" order, which depends on the filesystem and is
+therefore inherently unpredictable and unreliable. To make future PCR
+values more predictable, the entries should be processed in a
+deterministic order, such as alphabetically by filename.
+
+Signed-off-by: Michael Chang <mchang@suse.com>
+---
+ grub-core/commands/blscfg.c | 164 ++++++++++++++++++++++--------------
+ 1 file changed, 103 insertions(+), 61 deletions(-)
+
+--- a/grub-core/commands/blsuki.c
++++ b/grub-core/commands/blsuki.c
+@@ -117,6 +117,16 @@
+ 
+ static grub_blsuki_entry_t *entries = NULL;
+ 
++struct bls_fragment
++{
++  struct bls_fragment *next;
++  struct bls_fragment *prev;
++  char *filename;
++};
++typedef struct bls_fragment *bls_fragment_t;
++
++static bls_fragment_t fragments = NULL;
++
+ #define FOR_BLSUKI_ENTRIES(var) FOR_LIST_ELEMENTS (var, entries)
+ 
+ /*
+@@ -645,6 +655,69 @@
+   return 0;
+ }
+ 
++static int
++collect_fragments (
++    const char *filename,
++    const struct grub_dirhook_info *dirhook_info __attribute__ ((__unused__)),
++    void *data __attribute__ ((__unused__)))
++{
++  bls_fragment_t fragment, f, last;
++
++  if (filename[0] == '.')
++    return 0;
++
++  fragment = grub_zalloc (sizeof (*fragment));
++  if (fragment == NULL)
++    return 0;
++
++  fragment->filename = grub_strdup (filename);
++  if (fragment->filename == NULL)
++    {
++      grub_free (fragment);
++      return 0;
++    }
++
++  if (fragments == NULL)
++    {
++      fragments = fragment;
++      return 0;
++    }
++
++  FOR_LIST_ELEMENTS (f, fragments)
++    {
++      int rc;
++      rc = grub_strcmp (fragment->filename, f->filename);
++      if (rc == 0)
++	{
++	  grub_free (fragment);
++	  return 0;
++	}
++      if (rc < 0)
++	{
++	  fragment->next = f;
++	  if (f->prev)
++	    f->prev->next = fragment;
++	  fragment->prev = f->prev;
++	  f->prev = fragment;
++	  if (f == fragments)
++	    {
++	      fragments = fragment;
++	      fragment->prev = NULL;
++	    }
++	  return 0;
++	}
++      last = f;
++    }
++
++  if (last)
++    {
++      last->next = fragment;
++      fragment->prev = last;
++    }
++
++  return 0;
++}
++
+ /*
+  * This function returns a list of values that had the same key in the BLS
+  * config file or UKI. The number of entries in this list is returned by the len
+@@ -1200,7 +1273,7 @@
+       read_entry_info.devid = info->devid;
+       read_entry_info.cmd_type = cmd_type;
+ 
+-      r = dir_fs->fs_dir (dir_dev, read_entry_info.dirname, blsuki_read_entry,
++      r = dir_fs->fs_dir (dir_dev, read_entry_info.dirname, collect_fragments,
+ 			  &read_entry_info);
+       if (r != 0)
+ 	{
+@@ -1208,6 +1281,17 @@
+ 	  grub_errno = GRUB_ERR_NONE;
+ 	}
+ 
++      while (fragments != NULL)
++	{
++	  bls_fragment_t fragment = fragments;
++
++	  fragments = fragments->next;
++	  grub_dprintf ("blsuki", "read_entry: %s\n", fragment->filename);
++	  blsuki_read_entry (fragment->filename, NULL, &read_entry_info);
++	  grub_free (fragment->filename);
++	  grub_free (fragment);
++	}
++
+       /*
+        * If we aren't able to find BLS entries in the directory given by info->dirname,
+        * we can fallback to the default location of "/loader/entries/" and see if we

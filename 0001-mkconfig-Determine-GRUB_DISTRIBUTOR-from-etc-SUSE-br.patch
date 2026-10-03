@@ -1,0 +1,48 @@
+From a5208417eecf9313239aa0659d4b015f2a3ba33e Mon Sep 17 00:00:00 2001
+From: Michael Chang <mchang@suse.com>
+Date: Thu, 29 May 2025 11:47:08 +0800
+Subject: [PATCH] mkconfig: Determine GRUB_DISTRIBUTOR from /etc/SUSE-brand
+
+Starting with SLE 16, the $NAME field in /etc/os-release contains only
+the unified value "SLE". To provide a more specific OS label for GRUB
+menu entries, GRUB should instead use the value from /etc/SUSE-brand.
+
+Signed-off-by: Michael Chang <mchang@suse.com>
+---
+ util/grub-mkconfig.in | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+--- a/util/grub-mkconfig.in
++++ b/util/grub-mkconfig.in
+@@ -241,6 +241,17 @@
+ if [ "x${GRUB_ADVANCED_ACCESS_LEVEL}" = "x" ] ; then GRUB_ADVANCED_ACCESS_LEVEL="0" ; fi
+ if [ "x${GRUB_RECOVERY_ACCESS_LEVEL}" = "x" ] ; then GRUB_RECOVERY_ACCESS_LEVEL="0" ; fi
+ 
++# Use /etc/SUSE-brand for os label (bsc#1239169)
++grub_os_id () (
++    VERSION=""
++    GRUB_OS_ID=""
++    # Source /etc/SUSE-brand only if it defines GRUB_OS_ID
++    ! grep -q "^GRUB_OS_ID=" "${sysconfdir}/SUSE-brand" 2>/dev/null || source "${sysconfdir}/SUSE-brand"
++    # Check VERSION is 16.0 or newer before applying for backward compatibility
++    [ x"`echo -e "${VERSION}\n16.0" | sort -V | head -n1`" = x"16.0" ] || GRUB_OS_ID=""
++    echo "$GRUB_OS_ID"
++)
++
+ if [ x"${GRUB_DISTRIBUTOR}" = x ] ; then
+     for i in "${sysconfdir}/os-release" "/usr/lib/os-release" ; do
+       if [ -f "$i" ] ; then
+@@ -248,7 +259,12 @@
+         break
+       fi
+     done
+-    if [ x"${NAME}" != x ] && [ x"${VERSION}" != x ] ; then
++
++    OS_ID=`grub_os_id`
++
++    if [ x"${OS_ID}" != x ] ; then
++      GRUB_DISTRIBUTOR="${OS_ID}"
++    elif [ x"${NAME}" != x ] && [ x"${VERSION}" != x ] ; then
+       GRUB_DISTRIBUTOR="${NAME} ${VERSION}"
+     else
+       GRUB_DISTRIBUTOR="${NAME}"

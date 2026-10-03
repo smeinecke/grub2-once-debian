@@ -1,0 +1,102 @@
+---
+ grub-core/commands/tpm.c |   46 ++++++++++++++++++++++++++++++++++++----------
+ util/grub-install.c      |    6 ++++--
+ 2 files changed, 40 insertions(+), 12 deletions(-)
+
+Index: grub-2.12/grub-core/commands/tpm.c
+===================================================================
+--- grub-2.12.orig/grub-core/commands/tpm.c
++++ grub-2.12/grub-core/commands/tpm.c
+@@ -27,7 +27,9 @@
+ #include <grub/verify.h>
+ #include <grub/dl.h>
+ #include <grub/extcmd.h>
++#ifdef GRUB_MACHINE_EFI
+ #include <grub/efi/efi.h>
++#endif
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+@@ -96,12 +98,6 @@ struct grub_file_verifier grub_tpm_verif
+   .verify_string = grub_tpm_verify_string,
+ };
+ 
+-/*
+- * Preserve current PCR values and record them to an EFI variable
+- */
+-#define GRUB2_PCR_BITMASK_DEFAULT	((1 << 16) - 1)
+-#define GRUB2_PCR_BITMASK_ALL		((1 << 24) - 1)
+-
+ static const struct grub_arg_option grub_tpm_record_pcrs_options[] =
+   {
+     {
+@@ -117,6 +113,14 @@ static const struct grub_arg_option grub
+     {0, 0, 0, 0, 0, 0}
+   };
+ 
++#ifdef GRUB_MACHINE_EFI
++
++/*
++ * Preserve current PCR values and record them to an EFI variable
++ */
++#define GRUB2_PCR_BITMASK_DEFAULT	((1 << 16) - 1)
++#define GRUB2_PCR_BITMASK_ALL		((1 << 24) - 1)
++
+ static grub_err_t
+ grub_tpm_parse_pcr_index (const char *word, const char **end_ret, unsigned int *index)
+ {
+@@ -268,6 +272,10 @@ grub_tpm_record_pcrs (grub_extcmd_contex
+   grub_size_t size = 0;
+   int n, rv = 1;
+ 
++  /* To prevent error: unable to read PCR from TPM, if no TPM device available */
++  if (!grub_tpm_present())
++    return GRUB_ERR_NONE;
++
+   if (argc == 0)
+     pcr_bitmask = GRUB2_PCR_BITMASK_DEFAULT;
+   else
+@@ -296,6 +304,18 @@ out:
+   return rv;
+ }
+ 
++#else
++
++static grub_err_t
++grub_tpm_record_pcrs (grub_extcmd_context_t ctxt __attribute__((unused)),
++    int argc __attribute__((unused)),
++    char **args __attribute__((unused)))
++{
++  return GRUB_ERR_NONE;
++}
++
++#endif
++
+ static grub_extcmd_t cmd;
+ 
+ GRUB_MOD_INIT (tpm)
+Index: grub-2.12/util/grub-install.c
+===================================================================
+--- grub-2.12.orig/util/grub-install.c
++++ grub-2.12/util/grub-install.c
+@@ -1574,8 +1574,9 @@ main (int argc, char *argv[])
+ 
+   grub_util_unlink (load_cfg);
+ 
+-  if (1)
++  if (platform == GRUB_INSTALL_PLATFORM_X86_64_EFI && have_cryptodisk)
+     {
++      grub_install_push_module ("tpm");
+       load_cfg_f = grub_util_fopen (load_cfg, "wb");
+       have_load_cfg = 1;
+       fprintf (load_cfg_f, "tpm_record_pcrs 0-9\n");
+@@ -1583,7 +1584,8 @@ main (int argc, char *argv[])
+ 
+   if (debug_image && debug_image[0])
+     {
+-      load_cfg_f = grub_util_fopen (load_cfg, "wb");
++      if (!load_cfg_f)
++	load_cfg_f = grub_util_fopen (load_cfg, "wb");
+       have_load_cfg = 1;
+       fprintf (load_cfg_f, "set debug='%s'\n",
+               debug_image);
