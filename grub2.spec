@@ -175,7 +175,7 @@ BuildRequires:  fde-tpm-helper-rpm-macros
 %endif
 
 Version:        2.16
-Release:        3.1
+Release:        4.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -197,6 +197,11 @@ Source17:       grub2-systemd-sleep.sh
 Source18:       grub2-check-default.sh
 Source19:       grub2-instdev-fixup.pl
 Source1000:     PATCH_POLICY
+Patch:          0001-kern-file-record-file-type-and-track-in-place-verifi.patch
+Patch:          0002-verifiers-support-in-place-verification.patch
+Patch:          0003-tpm-tpcm-mark-TPM-and-TPCM-verifiers-as-in-place-cap.patch
+Patch:          0004-loader-linux-measure-initrd-in-place.patch
+Patch:          0005-docs-grub-dev.texi-Document-in-place-verification.patch
 Patch:          0001-grub-core-sbat.csv.in-Set-vendor_package_name-to-gru.patch
 Patch:          rename-grub-info-file-to-grub2.patch
 Patch:          grub2-linux.patch
@@ -1585,6 +1590,17 @@ grep -E ${EXTRA_PATTERN} %{grubarch}-mod-all.lst > %{grubarch}-mod-extras.lst
 %endif
 
 %changelog
+* Mon Oct  5 2026 Gary Ching-Pang Lin <glin@suse.com>
+- Backport upstream fixes to verify linux initrd in place to avoid
+  the potential OOM (bsc#1275739)
+  * 0001-kern-file-record-file-type-and-track-in-place-verifi.patch
+  * 0002-verifiers-support-in-place-verification.patch
+  * 0003-tpm-tpcm-mark-TPM-and-TPCM-verifiers-as-in-place-cap.patch
+  * 0004-loader-linux-measure-initrd-in-place.patch
+  * 0005-docs-grub-dev.texi-Document-in-place-verification.patch
+- Patch refreshed
+  * 0001-clean-up-crypttab-and-linux-modules-dependency.patch
+  * 0009-Add-crypttab_entry-to-obviate-the-need-to-input-pass.patch
 * Sat Oct  3 2026 Dirk Müller <dmueller@suse.com>
 - fix typos
 * Fri Sep 18 2026 Michael Chang <mchang@suse.com>
