@@ -175,7 +175,7 @@ BuildRequires:  fde-tpm-helper-rpm-macros
 %endif
 
 Version:        2.16
-Release:        4.2
+Release:        5.1
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -384,6 +384,7 @@ Patch:          0001-bls-fix-default-entry-and-bumpcounter-for-BLS-boot-c.patch
 Patch:          0001-bash-completion-add-_init_completion-marker.patch
 Patch:          0001-linux-allocate-EFI-kernel-buffer-as-GRUB_EFI_LOADER_.patch
 Patch:          0001-insmod-ignore-efi_uga-on-EFI.patch
+Patch:          0001-Skip-in-place-verifier-for-the-synthesized-initrd.patch
 
 %if 0%{?suse_version} < 1600
 Requires:       gettext-runtime
@@ -1590,6 +1591,9 @@ grep -E ${EXTRA_PATTERN} %{grubarch}-mod-all.lst > %{grubarch}-mod-extras.lst
 %endif
 
 %changelog
+* Tue Oct  6 2026 Gary Ching-Pang Lin <glin@suse.com>
+- Fix a potential boot error when loading the synthesized initrd
+  * 0001-Skip-in-place-verifier-for-the-synthesized-initrd.patch
 * Mon Oct  5 2026 Gary Ching-Pang Lin <glin@suse.com>
 - Backport upstream fixes to verify linux initrd in place to avoid
   the potential OOM (bsc#1275739)
