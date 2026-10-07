@@ -175,7 +175,7 @@ BuildRequires:  fde-tpm-helper-rpm-macros
 %endif
 
 Version:        2.16
-Release:        5.1
+Release:        7.1
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -444,7 +444,7 @@ ExclusiveArch:  %{ix86} x86_64 ppc ppc64 ppc64le s390x aarch64 %{arm} riscv64 lo
 %description
 This is the second version of the GRUB (Grand Unified Bootloader), a
 highly configurable and customizable bootloader with modular
-architecture.  It support rich variety of kernel formats, file systems,
+architecture.  It supports a rich variety of kernel formats, file systems,
 computer architectures and hardware devices.
 
 %if 0%{?suse_version} >= 1600
@@ -515,7 +515,7 @@ Provides:       %{name}-%{grubarch}-sbat = %{sbat_generation_grub}
 
 %description %{grubarch}
 The GRand Unified Bootloader (GRUB) is a highly configurable and customizable
-bootloader with modular architecture.  It supports rich variety of kernel formats,
+bootloader with modular architecture.  It supports a rich variety of kernel formats,
 file systems, computer architectures and hardware devices.  This subpackage
 provides support for %{platform} systems.
 
@@ -573,7 +573,7 @@ Provides:       %{name}-%{grubefiarch}-sbat = %{sbat_generation_grub}
 
 %description %{grubefiarch}
 The GRand Unified Bootloader (GRUB) is a highly configurable and customizable
-bootloader with modular architecture.  It supports rich variety of kernel formats,
+bootloader with modular architecture.  It supports a rich variety of kernel formats,
 file systems, computer architectures and hardware devices.  This subpackage
 provides support for EFI systems.
 
@@ -629,7 +629,7 @@ BuildArch:      noarch
 
 %description %{grubxenarch}
 The GRand Unified Bootloader (GRUB) is a highly configurable and customizable
-bootloader with modular architecture.  It supports rich variety of kernel formats,
+bootloader with modular architecture.  It supports a rich variety of kernel formats,
 file systems, computer architectures and hardware devices.  This subpackage
 provides support for XEN systems.
 
@@ -693,7 +693,7 @@ BuildArch:      noarch
 
 %description systemd-sleep-plugin
 Grub2's systemd-sleep plugin for directly booting hibernated kernel image in
-swap partition while in resuming
+swap partition while resuming.
 %endif
 
 %prep
@@ -1591,6 +1591,8 @@ grep -E ${EXTRA_PATTERN} %{grubarch}-mod-all.lst > %{grubarch}-mod-extras.lst
 %endif
 
 %changelog
+* Wed Oct  7 2026 Dirk Müller <dmueller@suse.com>
+- fix typos in description
 * Tue Oct  6 2026 Gary Ching-Pang Lin <glin@suse.com>
 - Fix a potential boot error when loading the synthesized initrd
   * 0001-Skip-in-place-verifier-for-the-synthesized-initrd.patch
