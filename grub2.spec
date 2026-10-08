@@ -175,7 +175,7 @@ BuildRequires:  fde-tpm-helper-rpm-macros
 %endif
 
 Version:        2.16
-Release:        7.1
+Release:        8.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -202,6 +202,7 @@ Patch:          0002-verifiers-support-in-place-verification.patch
 Patch:          0003-tpm-tpcm-mark-TPM-and-TPCM-verifiers-as-in-place-cap.patch
 Patch:          0004-loader-linux-measure-initrd-in-place.patch
 Patch:          0005-docs-grub-dev.texi-Document-in-place-verification.patch
+Patch:          0001-disk-i386-pc-biosdisk-Fix-retry-of-CDROM-reads.patch
 Patch:          0001-grub-core-sbat.csv.in-Set-vendor_package_name-to-gru.patch
 Patch:          rename-grub-info-file-to-grub2.patch
 Patch:          grub2-linux.patch
@@ -1591,6 +1592,9 @@ grep -E ${EXTRA_PATTERN} %{grubarch}-mod-all.lst > %{grubarch}-mod-extras.lst
 %endif
 
 %changelog
+* Thu Oct  8 2026 Fabian Vogt <fvogt@suse.com>
+- Add upstream patch to fix CDROM boot failures (boo#1282614):
+  * 0001-disk-i386-pc-biosdisk-Fix-retry-of-CDROM-reads.patch
 * Wed Oct  7 2026 Dirk Müller <dmueller@suse.com>
 - fix typos in description
 * Tue Oct  6 2026 Gary Ching-Pang Lin <glin@suse.com>
