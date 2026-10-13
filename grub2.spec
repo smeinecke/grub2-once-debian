@@ -175,7 +175,7 @@ BuildRequires:  fde-tpm-helper-rpm-macros
 %endif
 
 Version:        2.16
-Release:        8.2
+Release:        9.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -204,6 +204,8 @@ Patch:          0004-loader-linux-measure-initrd-in-place.patch
 Patch:          0005-docs-grub-dev.texi-Document-in-place-verification.patch
 Patch:          0001-disk-i386-pc-biosdisk-Fix-retry-of-CDROM-reads.patch
 Patch:          0001-grub-core-sbat.csv.in-Set-vendor_package_name-to-gru.patch
+Patch:          0001-ieee1275-ofdisk-fix-NULL-deref-and-use-after-free-in.patch
+Patch:          0002-ieee1275-ofdisk-enumerate-all-PCIe-NVMe-namespaces.patch
 Patch:          rename-grub-info-file-to-grub2.patch
 Patch:          grub2-linux.patch
 Patch:          use-grub2-as-a-package-name.patch
@@ -1592,6 +1594,10 @@ grep -E ${EXTRA_PATTERN} %{grubarch}-mod-all.lst > %{grubarch}-mod-extras.lst
 %endif
 
 %changelog
+* Tue Oct 13 2026 Michael Chang <mchang@suse.com>
+- Fix PowerPC PCIe NVMe disk discovery (bsc#1239799 ltc#211961 bsc#1245357 ltc#214095)
+  * 0001-ieee1275-ofdisk-fix-NULL-deref-and-use-after-free-in.patch
+  * 0002-ieee1275-ofdisk-enumerate-all-PCIe-NVMe-namespaces.patch
 * Thu Oct  8 2026 Fabian Vogt <fvogt@suse.com>
 - Add upstream patch to fix CDROM boot failures (boo#1282614):
   * 0001-disk-i386-pc-biosdisk-Fix-retry-of-CDROM-reads.patch
@@ -1602,7 +1608,7 @@ grep -E ${EXTRA_PATTERN} %{grubarch}-mod-all.lst > %{grubarch}-mod-extras.lst
   * 0001-Skip-in-place-verifier-for-the-synthesized-initrd.patch
 * Mon Oct  5 2026 Gary Ching-Pang Lin <glin@suse.com>
 - Backport upstream fixes to verify linux initrd in place to avoid
-  the potential OOM (bsc#1275739)
+  the potential OOM (bsc#1275739 bsc#1223982 ltc#206196 jsc#PED-8373)
   * 0001-kern-file-record-file-type-and-track-in-place-verifi.patch
   * 0002-verifiers-support-in-place-verification.patch
   * 0003-tpm-tpcm-mark-TPM-and-TPCM-verifiers-as-in-place-cap.patch
