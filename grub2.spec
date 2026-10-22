@@ -175,7 +175,7 @@ BuildRequires:  fde-tpm-helper-rpm-macros
 %endif
 
 Version:        2.16
-Release:        9.2
+Release:        10.1
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -206,6 +206,17 @@ Patch:          0001-disk-i386-pc-biosdisk-Fix-retry-of-CDROM-reads.patch
 Patch:          0001-grub-core-sbat.csv.in-Set-vendor_package_name-to-gru.patch
 Patch:          0001-ieee1275-ofdisk-fix-NULL-deref-and-use-after-free-in.patch
 Patch:          0002-ieee1275-ofdisk-enumerate-all-PCIe-NVMe-namespaces.patch
+Patch:          0001-script-execute-Do-not-measure-.-block-bodies-into-PC.patch
+Patch:          0002-script-execute-Free-argv-on-error-paths-in-grub_scri.patch
+Patch:          0001-grub-mkconfig-Track-and-deduplicate-emitted-modules.patch
+Patch:          0002-00_header-Deduplicate-device-preparation-for-theme-f.patch
+Patch:          0003-31_efi_bootnext-Consolidate-EFI-platform-check.patch
+Patch:          0001-grub-mkpasswd-argon2-validate-argument-ranges-to-avo.patch
+Patch:          0001-mfa-fix-key-size-calculation-when-keyfile_size-is-0.patch
+Patch:          0002-mfa-reject-keyfile-offset-at-EOF-to-prevent-empty-ke.patch
+Patch:          0003-mfa-wipe-key-buffer-on-file-read-error.patch
+Patch:          0004-mfa-require-both-factors-to-provide-non-empty-keys.patch
+# Downstream patches below
 Patch:          rename-grub-info-file-to-grub2.patch
 Patch:          grub2-linux.patch
 Patch:          use-grub2-as-a-package-name.patch
@@ -1594,6 +1605,25 @@ grep -E ${EXTRA_PATTERN} %{grubarch}-mod-all.lst > %{grubarch}-mod-extras.lst
 %endif
 
 %changelog
+* Tue Oct 20 2026 Gary Ching-Pang Lin <glin@suse.com>
+- Reduce the size and number of TPM 8 PCR events (bsc#1278206)
+  * 0001-script-execute-Do-not-measure-.-block-bodies-into-PC.patch
+  * 0002-script-execute-Free-argv-on-error-paths-in-grub_scri.patch
+  * 0001-grub-mkconfig-Track-and-deduplicate-emitted-modules.patch
+  * 0002-00_header-Deduplicate-device-preparation-for-theme-f.patch
+  * 0003-31_efi_bootnext-Consolidate-EFI-platform-check.patch
+- Fix overflow in grub-mkpasswd-argon2 (bsc#1284464)
+  * 0001-grub-mkpasswd-argon2-validate-argument-ranges-to-avo.patch
+- Fix overflow in MFA key protector (bsc#1284464)
+  * 0001-mfa-fix-key-size-calculation-when-keyfile_size-is-0.patch
+  * 0002-mfa-reject-keyfile-offset-at-EOF-to-prevent-empty-ke.patch
+  * 0003-mfa-wipe-key-buffer-on-file-read-error.patch
+  * 0004-mfa-require-both-factors-to-provide-non-empty-keys.patch
+- Rebase patches
+  * grub-install-force-journal-draining-to-ensure-data-i.patch
+  * grub2-btrfs-05-grub2-mkconfig.patch
+  * grub2-efi-xen-cmdline.patch
+  * grub2-suse-remove-linux-root-param.patch
 * Tue Oct 13 2026 Michael Chang <mchang@suse.com>
 - Fix PowerPC PCIe NVMe disk discovery (bsc#1239799 ltc#211961 bsc#1245357 ltc#214095)
   * 0001-ieee1275-ofdisk-fix-NULL-deref-and-use-after-free-in.patch
