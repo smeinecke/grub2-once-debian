@@ -175,7 +175,7 @@ BuildRequires:  fde-tpm-helper-rpm-macros
 %endif
 
 Version:        2.16
-Release:        10.1
+Release:        11.2
 Summary:        Bootloader with support for Linux, Multiboot and more
 License:        GPL-3.0-or-later
 Group:          System/Boot
@@ -216,6 +216,9 @@ Patch:          0001-mfa-fix-key-size-calculation-when-keyfile_size-is-0.patch
 Patch:          0002-mfa-reject-keyfile-offset-at-EOF-to-prevent-empty-ke.patch
 Patch:          0003-mfa-wipe-key-buffer-on-file-read-error.patch
 Patch:          0004-mfa-require-both-factors-to-provide-non-empty-keys.patch
+Patch:          0001-osdep-unix-platform-Fix-NVMe-boot-device-buffer-boun.patch
+Patch:          0002-osdep-unix-platform-Handle-missing-IEEE1275-NVMe-boo.patch
+Patch:          0003-osdep-unix-platform-Fix-memory-leaks-in-add_multiple.patch
 # Downstream patches below
 Patch:          rename-grub-info-file-to-grub2.patch
 Patch:          grub2-linux.patch
@@ -1605,6 +1608,25 @@ grep -E ${EXTRA_PATTERN} %{grubarch}-mod-all.lst > %{grubarch}-mod-extras.lst
 %endif
 
 %changelog
+* Thu Oct 22 2026 Michael Chang <mchang@suse.com>
+- Fix out-of-bound memory write and uninitialized read in
+  add_multiple_nvme_bootdevices() when adding boot device to PowerPC
+  OpenFirmware's boot list (bsc#1284464)
+  * 0001-osdep-unix-platform-Fix-NVMe-boot-device-buffer-boun.patch
+  * 0002-osdep-unix-platform-Handle-missing-IEEE1275-NVMe-boo.patch
+  * 0003-osdep-unix-platform-Fix-memory-leaks-in-add_multiple.patch
+- Fix memory leak in error path, add missing error return check in
+  grub_initrd_component(), ensure NULL check before memset() in
+  grub_cryptokey_discard() (bsc#1284464)
+  * 0009-Add-crypttab_entry-to-obviate-the-need-to-input-pass.patch
+  * 0002-discard-cached-key-before-entering-grub-shell-and-ed.patch
+  * Fix-the-size-calculation-for-the-synthesized-initrd.patch
+- Fix out-of-bound memory write in add_multiple_dm_multipath_bootdevices() when
+  adding boot device to PowerPC OpenFirmware's boot list
+  * 0001-ieee1275-support-dm-multipath-bootlist.patch
+- Rebase patches
+  * 0002-Restrict-cryptsetup-key-file-permission-for-better-s.patch
+  * 0001-Improve-TPM-key-protection-on-boot-interruptions.patch
 * Tue Oct 20 2026 Gary Ching-Pang Lin <glin@suse.com>
 - Reduce the size and number of TPM 8 PCR events (bsc#1278206)
   * 0001-script-execute-Do-not-measure-.-block-bodies-into-PC.patch
